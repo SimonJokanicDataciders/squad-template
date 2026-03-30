@@ -1,0 +1,393 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TARGET=""
+STACK=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --stack) STACK="$2"; shift 2 ;;
+    -h|--help)
+      echo "Usage: ./init.sh <target-dir> [--stack <preset-name>]"
+      echo ""
+      echo "Bootstrap a project with the optimized Squad template."
+      echo ""
+      echo "Arguments:"
+      echo "  <target-dir>              Path to your project (must be a git repo)"
+      echo "  --stack <preset-name>     Stack preset to apply (e.g., dotnet-angular)"
+      echo ""
+      echo "Available presets:"
+      ls -1 "$SCRIPT_DIR/stacks/" | grep -v '^_' 2>/dev/null || echo "  (none yet — use _template to create one)"
+      echo ""
+      echo "Examples:"
+      echo "  ./init.sh ~/my-project --stack dotnet-angular"
+      echo "  ./init.sh ~/my-project                          # core only, no stack preset"
+      exit 0
+      ;;
+    *) TARGET="$1"; shift ;;
+  esac
+done
+
+# Validate
+if [[ -z "$TARGET" ]]; then
+  echo "Usage: ./init.sh <target-dir> [--stack <preset-name>]"
+  echo "Run ./init.sh --help for more info."
+  exit 1
+fi
+
+TARGET="$(cd "$TARGET" 2>/dev/null && pwd || echo "$TARGET")"
+
+if [[ ! -d "$TARGET" ]]; then
+  echo "Error: Directory '$TARGET' does not exist."
+  exit 1
+fi
+
+if [[ ! -d "$TARGET/.git" ]]; then
+  echo "Error: '$TARGET' is not a git repository. Run 'git init' first."
+  exit 1
+fi
+
+# Get user info for placeholder replacement
+USER_NAME=$(cd "$TARGET" && git config user.name 2>/dev/null || echo "Developer")
+PROJECT_NAME=$(basename "$TARGET")
+INIT_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+echo "================================================"
+echo "  Squad Template Init"
+echo "================================================"
+echo "  Project:  $PROJECT_NAME"
+echo "  Target:   $TARGET"
+echo "  User:     $USER_NAME"
+echo "  Stack:    ${STACK:-none (core only)}"
+echo "================================================"
+echo ""
+
+# Standard agent roster — all projects get these 6 agents
+AGENTS="lead backend frontend tester scribe ralph"
+
+# Step 1: Copy core files
+echo "1/5  Copying core engine..."
+
+# Create full directory structure including ALL agent dirs
+mkdir -p "$TARGET/.github/agents" "$TARGET/.github/workflows"
+mkdir -p "$TARGET/.copilot/skills/coordinator"
+mkdir -p "$TARGET/.squad/identity" "$TARGET/.squad/templates"
+mkdir -p "$TARGET/.squad/decisions/inbox" "$TARGET/.squad/casting"
+mkdir -p "$TARGET/.squad/orchestration-log" "$TARGET/.squad/log" "$TARGET/.squad/skills"
+
+for agent in $AGENTS; do
+  mkdir -p "$TARGET/.squad/agents/$agent"
+done
+
+# Copy core files
+cp -n "$SCRIPT_DIR/core/.gitattributes" "$TARGET/.gitattributes" 2>/dev/null || true
+cp "$SCRIPT_DIR/core/.github/agents/squad.agent.md" "$TARGET/.github/agents/"
+[ -f "$SCRIPT_DIR/core/.copilot/mcp-config.json" ] && cp "$SCRIPT_DIR/core/.copilot/mcp-config.json" "$TARGET/.copilot/" || true
+cp "$SCRIPT_DIR/core/.copilot/skills/coordinator/"*.md "$TARGET/.copilot/skills/coordinator/" 2>/dev/null || true
+
+# Squad state files
+cp -n "$SCRIPT_DIR/core/.squad/config.json" "$TARGET/.squad/config.json" 2>/dev/null || true
+cp "$SCRIPT_DIR/core/.squad/session-state.md" "$TARGET/.squad/"
+cp "$SCRIPT_DIR/core/.squad/identity/"*.md "$TARGET/.squad/identity/"
+cp "$SCRIPT_DIR/core/.squad/templates/"*.md "$TARGET/.squad/templates/" 2>/dev/null || true
+cp "$SCRIPT_DIR/core/.squad/casting/"*.json "$TARGET/.squad/casting/" 2>/dev/null || true
+
+# Copy stack seeds (curated guardrails for common tech stacks)
+if [ -d "$SCRIPT_DIR/stacks/seeds" ]; then
+  mkdir -p "$TARGET/.squad/seeds"
+  cp "$SCRIPT_DIR/stacks/seeds/"*.seed.md "$TARGET/.squad/seeds/" 2>/dev/null || true
+fi
+
+# Copy shared company-wide failure patterns (inherited by all projects)
+if [ -d "$SCRIPT_DIR/shared" ]; then
+  cp "$SCRIPT_DIR/shared/"*.md "$TARGET/.copilot/skills/" 2>/dev/null || true
+fi
+
+# Workflows (don't overwrite existing)
+for wf in "$SCRIPT_DIR/core/.github/workflows/"*.yml; do
+  [ -f "$wf" ] && cp -n "$wf" "$TARGET/.github/workflows/" 2>/dev/null || true
+done
+
+echo "     Done."
+
+# Step 2: Create agent charters and histories for ALL agents
+echo "2/5  Creating agent charters and histories..."
+
+for agent in $AGENTS; do
+  # Copy charter from core (generic functional charters for all roles)
+  if [ -f "$SCRIPT_DIR/core/.squad/agents/$agent/charter.md" ]; then
+    cp "$SCRIPT_DIR/core/.squad/agents/$agent/charter.md" "$TARGET/.squad/agents/$agent/charter.md"
+  fi
+
+  # Copy learning protocol if it exists (auto-discovery instructions)
+  if [ -f "$SCRIPT_DIR/core/.squad/agents/$agent/learn.md" ]; then
+    cp "$SCRIPT_DIR/core/.squad/agents/$agent/learn.md" "$TARGET/.squad/agents/$agent/learn.md"
+  fi
+
+  # Create empty history.md if it doesn't exist
+  if [[ ! -f "$TARGET/.squad/agents/$agent/history.md" ]]; then
+    cat > "$TARGET/.squad/agents/$agent/history.md" << HIST_EOF
+# $agent — History
+
+## Project Context
+Project: $PROJECT_NAME
+
+## Learnings
+<!-- Append entries below. -->
+HIST_EOF
+  fi
+done
+
+echo "     Created charters + histories for: $AGENTS"
+
+# Step 3: Create team.md, routing.md, ceremonies.md, decisions.md
+echo "3/5  Creating team configuration..."
+
+# team.md — pre-populated roster so coordinator skips Init Mode
+if [[ ! -f "$TARGET/.squad/team.md" ]]; then
+  cat > "$TARGET/.squad/team.md" << TEAM_EOF
+# Squad Team
+
+> $PROJECT_NAME
+
+## Coordinator
+
+| Name | Role | Notes |
+|------|------|-------|
+| Squad | Coordinator | Routes work, enforces handoffs and reviewer gates. |
+
+## Members
+
+| Name | Role | Charter | Status |
+|------|------|---------|--------|
+| Lead | Architect | .squad/agents/lead/charter.md | 🏗️ Active |
+| Backend | Backend Dev | .squad/agents/backend/charter.md | 🔧 Active |
+| Frontend | Frontend Dev | .squad/agents/frontend/charter.md | ⚛️ Active |
+| Tester | QA / Tester | .squad/agents/tester/charter.md | 🧪 Active |
+| Scribe | Session Logger | .squad/agents/scribe/charter.md | 📋 Silent |
+| Ralph | Work Monitor | .squad/agents/ralph/charter.md | 🔄 Monitor |
+
+## Project Context
+
+- **Project:** $PROJECT_NAME
+- **Created:** $(date +%Y-%m-%d)
+TEAM_EOF
+fi
+
+# routing.md — always create from template if missing
+if [[ ! -f "$TARGET/.squad/routing.md" ]]; then
+  cat > "$TARGET/.squad/routing.md" << 'ROUTE_EOF'
+# Work Routing
+
+How to decide who handles what.
+
+## Delivery Flow
+
+```
+design → plan → implement / frontend / database → lint → test
+    → integration-test → review → build → deploy → monitor
+         ↑                                              ↓
+      scaffold (optional)               document (parallel)
+```
+
+## Routing Table
+
+| Work Type | SDLC Phase | Route To | Examples |
+|-----------|-----------|----------|----------|
+| Architecture, domain model | design | Lead | System design, API contracts, data model |
+| Task decomposition, commit strategy | plan | Lead | Breaking work into steps, ordering |
+| Backend services, endpoints | implement | Backend | API routes, business logic, data access |
+| Database schema, migrations | database | Backend | Schema changes, seed data |
+| UI components, user flows | frontend | Frontend | Pages, forms, components, styling |
+| File scaffolding | scaffold | Frontend | Generate boilerplate, project structure |
+| Lint, formatting, static analysis | lint | Tester | Code style, linting rules |
+| Unit and component tests | test | Tester | Unit tests, mocks, assertions |
+| Integration and e2e tests | integration-test | Tester | API tests, browser tests |
+| PR review, quality gates | review | Tester | Code review, approval |
+| API docs, README, decision capture | document | Scribe | Documentation, changelogs |
+| Session logging | — | Scribe | Automatic — never needs routing |
+
+## Routing Principles
+
+1. **Eager routing** — pick the most specific agent
+2. **Fan-out on multi-domain** — parallel when independent
+3. **Anticipate downstream** — queue related work proactively
+4. **Doc-impact check** — user-facing changes trigger Scribe
+5. **Security-impact check** — auth/secrets changes need review
+6. **Fallback cascade** — project rules → universal → ask human
+7. **Ceremony awareness** — check triggers before dispatching
+ROUTE_EOF
+fi
+
+# ceremonies.md — always create from template if missing
+if [[ ! -f "$TARGET/.squad/ceremonies.md" ]]; then
+  cat > "$TARGET/.squad/ceremonies.md" << 'CERE_EOF'
+# Ceremonies
+
+Structured team meetings triggered automatically or on request.
+
+---
+
+## Design Review
+
+- **Trigger:** auto
+- **When:** before
+- **Condition:** Multi-agent task involving 2+ agents modifying shared systems, or task introduces a new architectural pattern
+- **Facilitator:** Lead
+- **Participants:** All relevant agents
+- **Status:** enabled
+
+### Agenda
+1. Review task and requirements
+2. Agree on interfaces and contracts
+3. Identify risks and edge cases
+4. Assign action items
+
+### Gate
+- Produce a design.brief before implementation
+- Blocking concerns resolved or accepted with documented risk
+
+---
+
+## Retrospective
+
+- **Trigger:** auto
+- **When:** after
+- **Condition:** Build failure, test failure, or reviewer rejection
+- **Facilitator:** Lead
+- **Participants:** All involved agents
+- **Status:** enabled
+
+### Agenda
+1. What happened? (facts only)
+2. Root cause analysis
+3. What should change?
+4. Action items for next iteration
+CERE_EOF
+fi
+
+# decisions.md
+if [[ ! -f "$TARGET/.squad/decisions.md" ]]; then
+  cat > "$TARGET/.squad/decisions.md" << 'DECISIONS_EOF'
+# Squad Decisions
+
+## Active Decisions
+
+No decisions recorded yet.
+
+## Governance
+
+- All meaningful changes require team consensus
+- Document architectural decisions here
+- Keep history focused on work, decisions focused on direction
+DECISIONS_EOF
+fi
+
+echo "     Done."
+
+# Step 4: Apply stack preset (if specified)
+if [[ -n "$STACK" ]]; then
+  STACK_DIR="$SCRIPT_DIR/stacks/$STACK"
+  if [[ ! -d "$STACK_DIR" ]]; then
+    echo ""
+    echo "Error: Stack preset '$STACK' not found."
+    echo "Available presets:"
+    ls -1 "$SCRIPT_DIR/stacks/" | grep -v '^_' 2>/dev/null || echo "  (none)"
+    exit 1
+  fi
+
+  echo "4/5  Applying stack preset: $STACK"
+
+  # Copy skills (stack-specific knowledge bundles)
+  if [[ -d "$STACK_DIR/skills" ]]; then
+    cp "$STACK_DIR/skills/"*.md "$TARGET/.copilot/skills/" 2>/dev/null || true
+  fi
+
+  # Override routing and ceremonies with stack-specific versions
+  [[ -f "$STACK_DIR/routing.md" ]] && cp "$STACK_DIR/routing.md" "$TARGET/.squad/"
+  [[ -f "$STACK_DIR/ceremonies.md" ]] && cp "$STACK_DIR/ceremonies.md" "$TARGET/.squad/"
+
+  # Copy instructions
+  if [[ -d "$STACK_DIR/instructions" ]]; then
+    mkdir -p "$TARGET/.github/instructions"
+    cp "$STACK_DIR/instructions/"* "$TARGET/.github/instructions/" 2>/dev/null || true
+  fi
+
+  # Override agent charters with stack-specific versions
+  # Map preset charter names → agent directory names (zsh-compatible)
+  charter_map() {
+    case "$1" in
+      architect) echo "lead";;
+      backend)   echo "backend";;
+      frontend)  echo "frontend";;
+      qa)        echo "tester";;
+      docs)      echo "scribe";;
+      ops)       echo "ralph";;
+      *)         echo "$1";;
+    esac
+  }
+
+  if [[ -d "$STACK_DIR/agents" ]]; then
+    for preset_file in "$STACK_DIR/agents/"*.charter.md; do
+      [ -f "$preset_file" ] || continue
+      basename_no_ext=$(basename "$preset_file" .charter.md)
+      target_agent=$(charter_map "$basename_no_ext")
+      if [[ -d "$TARGET/.squad/agents/$target_agent" ]]; then
+        cp "$preset_file" "$TARGET/.squad/agents/$target_agent/charter.md"
+        echo "     Upgraded charter: $target_agent (from $basename_no_ext.charter.md)"
+      fi
+    done
+  fi
+
+  echo "     Done."
+else
+  echo "4/5  No stack preset — using generic agent charters."
+  echo "     Customize charters in .squad/agents/*/charter.md for your tech stack."
+fi
+
+# Step 5: Replace placeholders
+echo "5/5  Replacing placeholders..."
+
+find "$TARGET/.squad" "$TARGET/.github/agents" "$TARGET/.copilot" \
+  -type f \( -name "*.md" -o -name "*.json" \) 2>/dev/null | while read -r f; do
+  if grep -q '{{PROJECT_NAME}}\|{{USER_NAME}}\|{{INIT_TIMESTAMP}}' "$f" 2>/dev/null; then
+    sed -i.bak \
+      -e "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" \
+      -e "s/{{USER_NAME}}/$USER_NAME/g" \
+      -e "s/{{INIT_TIMESTAMP}}/$INIT_TIMESTAMP/g" \
+      "$f"
+    rm -f "$f.bak"
+  fi
+done
+
+echo "     Done."
+
+# Summary
+TOTAL_FILES=$(find "$TARGET/.squad" "$TARGET/.github/agents" "$TARGET/.copilot" -type f 2>/dev/null | wc -l | tr -d ' ')
+
+echo ""
+echo "================================================"
+echo "  Squad template applied successfully!"
+echo "================================================"
+echo ""
+echo "  Files:    $TOTAL_FILES"
+echo "  Team:     Lead, Backend, Frontend, Tester, Scribe, Ralph"
+echo "  Routing:  .squad/routing.md"
+echo "  Charters: .squad/agents/*/charter.md"
+echo ""
+echo "  The team is READY — no Init Mode needed."
+echo "  Start working: copilot --agent squad"
+echo ""
+if [[ -n "$STACK" ]]; then
+echo "  Stack preset '$STACK' applied with specialized"
+echo "  charters and ${TOTAL_FILES} skill bundles."
+echo ""
+else
+echo "  Customize for your tech stack:"
+echo "    1. Edit .squad/agents/*/charter.md with your conventions"
+echo "    2. Create skill bundles in .copilot/skills/"
+echo "    3. Document failures in .copilot/skills/failure-patterns.md"
+fi
+echo ""
