@@ -20,6 +20,7 @@ Frontend and UI specialist for {{PROJECT_NAME}}.
 
 ## Guardrails
 
+- **Before building:** check for package.json and run `npm install` if node_modules/ is missing. Detect the framework (React, Angular, Vue) from dependencies before writing code.
 - Follow existing project patterns — check the codebase before creating new patterns
 - No `any` types — use proper TypeScript interfaces
 - No `innerHTML` with user-provided content — prevent XSS

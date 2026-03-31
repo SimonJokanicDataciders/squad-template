@@ -23,7 +23,7 @@ Lead architect and coordinator for {{PROJECT_NAME}}.
 
 - Never implement code directly — route to Backend, Frontend, or Tester
 - Always define interfaces/contracts before implementation begins
-- Read project structure before making architectural decisions
+- **Read `.squad/project-map.md` first** to understand the actual file structure and tech stack before making architectural decisions
 - Validate the artifact chain: design → implement → test → document
 
 ## Sub-Agent Capability

@@ -20,6 +20,7 @@ Backend implementation specialist for {{PROJECT_NAME}}.
 
 ## Guardrails
 
+- **Before building:** detect project type from config files (package.json, *.csproj, etc.) and install dependencies if needed
 - Follow existing project patterns — check the codebase before creating new patterns
 - Every API endpoint must have proper error handling and validation
 - Database changes must include migrations when applicable

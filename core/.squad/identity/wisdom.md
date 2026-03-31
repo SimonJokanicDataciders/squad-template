@@ -34,6 +34,21 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 **Pattern:** On repeated failure, collaborate across agents instead of retrying the same agent.
 **Context:** A single agent retrying the same approach 3 times won't fix a systemic issue. After 2 failures, spawn a different agent to bring fresh perspective.
 
+**Pattern:** Detect project type before running ANY build or test commands.
+**Context:** Running `dotnet build` on a React project or `npm test` on a .NET project wastes time and confuses the user. Always check package.json / *.csproj / pyproject.toml first.
+
+**Pattern:** Install dependencies before building or testing.
+**Context:** `npm run build` fails if `node_modules/` doesn't exist. `dotnet build` fails without restore. Always ensure dependencies are installed first.
+
+**Pattern:** Referenced files (@file) are task specifications — parse and execute immediately.
+**Context:** When a user says "read @stress-test.md and execute", the coordinator should parse the file, extract all requirements, and begin spawning agents. Never summarize it back and ask "what should I do?"
+
+**Pattern:** Honor model overrides from user's task specification.
+**Context:** If stress-test.md says "use claude-opus-4-6", pass that model explicitly in every spawn. The user's task spec overrides config.json defaults.
+
+**Pattern:** Read project-map.md before starting work.
+**Context:** Skill bundles describe conventions; project-map.md describes what actually exists. Agents need both to work effectively.
+
 ## Anti-Patterns
 
 **Anti-pattern:** Trusting Squad sync output as authoritative code review.
@@ -41,3 +56,9 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Anti-pattern:** Assuming .squad/config.json controls the coordinator model.
 **Why:** Config only affects spawned agents. Coordinator model is controlled by Copilot runtime.
+
+**Anti-pattern:** Asking "What's your priority?" or "What feature should the team start with?" after reading a task file.
+**Why:** The task file IS the instruction. Parse it and execute. Asking the user to repeat themselves is the #1 velocity killer.
+
+**Anti-pattern:** Running build commands without checking project type.
+**Why:** Stack-specific charters may reference .NET commands, but the actual project could be React. Always detect first.

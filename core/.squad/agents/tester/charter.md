@@ -20,6 +20,7 @@ Quality gate specialist for {{PROJECT_NAME}}.
 
 ## Guardrails
 
+- **Before testing:** detect the test framework from project config and ensure dependencies are installed
 - Test naming: `MethodName_Condition_ExpectedResult` or `describe/it` blocks
 - One assertion focus per test — test one behavior at a time
 - Test both happy paths AND error cases
