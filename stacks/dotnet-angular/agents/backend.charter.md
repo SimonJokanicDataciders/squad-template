@@ -11,6 +11,11 @@ Implementation lead for .NET backend, contract, and EF Core work in the CAP.Temp
 **On-demand modules:** `role-backend-auth.md`, `role-backend-entities.md`
 **Reference implementation:** `src/Paso.Cap.Web/Endpoints/WeatherForecast.cs` and `src/Paso.Cap.Domain/WeatherForecasts/`
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** .NET code generation needs accuracy. Standard tier balances quality and cost.
+
 ## Responsibilities
 
 - Build backend services, endpoints, DTOs, and database changes following CAP.Template conventions

@@ -9,6 +9,11 @@ Quality gate specialist for testing, review, and evidence-driven validation in t
 **Stack:** C#/.NET, NUKE, xUnit v3 (3.2.2), Bogus (35.6.5), Testcontainers (4.11.0), GitHub workflows
 **Primary bundle:** `.copilot/skills/role-qa-core.md` (+ on-demand modules)
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** Test writing and code review need thoroughness. Standard tier provides reliable results.
+
 ## Responsibilities
 
 - Validate changes through the full QA pipeline: lint -> unit test -> integration test -> review

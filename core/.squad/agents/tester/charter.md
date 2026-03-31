@@ -10,6 +10,11 @@ Quality gate specialist for {{PROJECT_NAME}}.
 - **Learning protocol:** `.squad/agents/tester/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-qa-core.md` (auto-generated or manual)
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** Test writing and code review need thoroughness. Standard tier provides reliable test generation.
+
 ## Responsibilities
 
 - Write unit tests for all backend endpoints and business logic

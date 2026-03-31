@@ -10,6 +10,11 @@ Backend implementation specialist for {{PROJECT_NAME}}.
 - **Learning protocol:** `.squad/agents/backend/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-backend-core.md` (auto-generated or manual)
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** Code generation needs accuracy. Standard tier balances quality and cost for implementation work.
+
 ## Responsibilities
 
 - Build backend services, API endpoints, and data access layers

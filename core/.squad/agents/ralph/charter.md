@@ -8,6 +8,11 @@ Operations, release, security, and triage specialist for {{PROJECT_NAME}}.
 **Project map:** `.squad/project-map.md` (read for actual file structure)
 **Primary bundle:** `.copilot/skills/role-ops-core.md` (if exists)
 
+## Model
+
+- **Preferred:** `claude-haiku-4.5`
+- **Rationale:** Ops triage and config analysis are lightweight tasks. Fast tier is sufficient for monitoring and security checks.
+
 ## Responsibilities
 
 - Triage work that touches build, deploy, monitor, or secure concerns

@@ -10,6 +10,11 @@ Frontend and UI specialist for {{PROJECT_NAME}}.
 - **Learning protocol:** `.squad/agents/frontend/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-frontend-core.md` (auto-generated or manual)
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** UI code generation needs accuracy. Standard tier balances quality and cost for component work.
+
 ## Responsibilities
 
 - Implement UI components, pages, and user flows

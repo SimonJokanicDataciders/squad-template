@@ -10,6 +10,11 @@ UI and user-flow specialist for the CAP.Template local Squad trial.
 **Frontend root:** `src/Paso.Cap.Angular/` (Nx monorepo)
 **Primary bundle:** `.copilot/skills/role-frontend-core.md` (+ on-demand modules below)
 
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** Angular/TypeScript code generation needs accuracy. Standard tier balances quality and cost.
+
 ## Responsibilities
 
 - Implement Angular components, services, routing, and API integration within the Nx monorepo

@@ -48,6 +48,16 @@ When the user's task specification (including referenced files) says "use model 
 ### 6. READ PROJECT MAP
 If `.squad/project-map.md` exists, read it in the bootstrap turn alongside team.md and routing.md. It contains the ACTUAL file structure and tech stack of the project — critical for agents to know what exists before they start working.
 
+### 7. HANDLE read_agent FAILURES GRACEFULLY
+When `Read (Checking agent X)` fails, this is NORMAL — agent sessions expire quickly. Do NOT treat it as an error. Instead:
+1. Check `.squad/agents/{name}/status.md` on disk — if it says `done`, the agent completed successfully
+2. Check `.squad/orchestration-log/` for the agent's output files
+3. If status says `working` but the timestamp is old (>5 minutes), the agent likely crashed — re-spawn it
+4. **Never block on read_agent failures.** Move forward with whatever output files exist on disk.
+
+### 8. ALWAYS PASS MODEL EXPLICITLY IN SPAWNS
+When calling the `task` tool to spawn an agent, ALWAYS include the `model` parameter with the resolved model name. Never omit it and hope the platform picks the right one. If the user's task specification says "use claude-opus-4-6", pass `model: "claude-opus-4-6"` in EVERY spawn — no exceptions.
+
 ---
 
 ## On-Demand Modules
@@ -463,24 +473,29 @@ Before spawning an agent, determine which model to use. Check these layers in or
 
 **Layer 2 — Charter Preference:** Does the agent's charter have a `## Model` section with `Preferred` set to a specific model (not `auto`)? If yes, use that model.
 
-**Layer 3 — Task-Aware Auto-Selection:** Use the governing principle: **cost first, unless code is being written.** Match the agent's task to determine output type, then select accordingly:
+**Layer 3 — Task-Aware Auto-Selection:** Use the governing principle: **right model for the job — premium for decisions that feed others, standard for code, cheap for mechanical work.**
 
-| Task Output | Model | Tier | Rule |
-|-------------|-------|------|------|
-| Writing code (implementation, refactoring, test code, bug fixes) | `claude-sonnet-4.6` | Standard | Quality and accuracy matter for code. Use standard tier. |
-| Writing prompts or agent designs (structured text that functions like code) | `claude-sonnet-4.6` | Standard | Prompts are executable — treat like code. |
-| NOT writing code (docs, planning, triage, logs, changelogs, mechanical ops) | `claude-haiku-4.5` | Fast | Cost first. Haiku handles non-code tasks. |
-| Visual/design work requiring image analysis | `claude-opus-4.6` | Premium | Vision capability required. Overrides cost rule. |
+| Agent Role | Default Model | Tier | Rationale |
+|------------|---------------|------|-----------|
+| Lead/Architect (ripley) | `claude-opus-4.6` | Premium | Architecture decisions feed ALL other agents. Bad decisions cascade. Worth 3x. |
+| Backend (fenster) | `claude-sonnet-4.6` | Standard | Code generation — needs accuracy but sonnet handles well |
+| Frontend (dallas) | `claude-sonnet-4.6` | Standard | UI code generation — same tier as backend |
+| Tester (hockney) | `claude-sonnet-4.6` | Standard | Test writing + code review — needs thoroughness |
+| Scribe | `claude-haiku-4.5` | Fast | Documentation, logs, changelogs — mechanical text. Cost first. |
+| Ralph | `claude-haiku-4.5` | Fast | Triage, ops config — mostly analysis, not heavy reasoning |
 
-**Role defaults:** Code/test writers → `claude-sonnet-4.6`. Docs/logs/mechanical ops → `claude-haiku-4.5`. Visual/design → `claude-opus-4.6` (vision required — never downgrade). Lead/Architect → auto per-task.
+**Task-based overrides (apply on top of role defaults):**
 
-**Task complexity adjustments** (apply at most ONE):
-- **Bump UP:** architecture proposals, reviewer gates, security audits, multi-agent coordination (output feeds 3+ agents)
-- **Bump DOWN:** typo fixes, renames, boilerplate, changelogs, version bumps
-- **Code specialist (`gpt-5.4`):** large multi-file refactors, heavy code gen (500+ lines)
-- **Analytical diversity:** security reviews, architecture reviews after rejection — use a different model than the one that failed
+| Task Output | Model | When to Apply |
+|-------------|-------|---------------|
+| Writing code (implementation, refactoring, bug fixes) | `claude-sonnet-4.6` | Any agent writing code, even if role default is cheaper |
+| Architecture/design decisions that feed 3+ agents | `claude-opus-4.6` | Bump UP — output quality multiplied across team |
+| Security audits, reviewer gates | `claude-opus-4.6` | Bump UP — safety-critical, mistakes are expensive |
+| Visual/design work requiring image analysis | `claude-opus-4.6` | Vision capability required — never downgrade |
+| Docs, logs, changelogs, version bumps | `claude-haiku-4.5` | Bump DOWN — mechanical, cost first |
+| Typo fixes, renames, boilerplate | `claude-haiku-4.5` | Bump DOWN — trivial work |
 
-**Layer 4 — Default:** If nothing else matched, use `claude-haiku-4.5`. Cost wins when in doubt, unless code is being produced.
+**Layer 4 — Default:** If nothing else matched, use `claude-sonnet-4.6`. Standard tier is the safe middle ground for unknown tasks.
 
 **Fallback chains — when a model is unavailable:**
 
@@ -499,7 +514,7 @@ Fast:     claude-haiku-4.5 → gpt-5.4-mini → gpt-4.1 → (omit model param)
 - Never fall back UP in tier — a fast/cheap task should not land on a premium model
 - Log fallbacks to the orchestration log for debugging, but never surface to the user unless asked
 
-**Passing the model:** Pass as `model` parameter on every `task` call. Omit if resolved model IS `claude-sonnet-4.6` (platform default). If nuclear fallback reached, omit entirely.
+**Passing the model:** Pass as `model` parameter on EVERY `task` call — ALWAYS include it, even for `claude-sonnet-4.6`. Never omit the model parameter hoping the platform will pick the right default. If nuclear fallback reached, omit entirely as last resort.
 
 **Spawn acknowledgment format:** `{emoji} {Name} ({model} · {tier note if bumped}) — {task}`. Include tier annotation only when bumped or specialist chosen.
 

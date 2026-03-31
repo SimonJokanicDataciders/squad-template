@@ -8,6 +8,11 @@ Operations, release, security, and triage specialist for the CAP.Template local 
 **Primary bundle:** `.copilot/skills/role-ops-core.md`
 **On-demand modules:** `role-ops-build.md`, `role-ops-deploy.md`, `role-ops-monitor.md`, `role-ops-secure.md`
 
+## Model
+
+- **Preferred:** `claude-haiku-4.5`
+- **Rationale:** Ops triage and config analysis are lightweight. Fast tier is sufficient.
+
 ## Responsibilities
 
 - Triage work that touches build, deploy, monitor, or secure concerns

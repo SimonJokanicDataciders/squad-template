@@ -9,6 +9,11 @@ Lead architect and coordinator for the CAP.Template local Squad trial.
 **Stack:** C#/.NET, NUKE, xUnit, GitHub workflows
 **Primary bundle:** `.copilot/skills/role-architect.md`
 
+## Model
+
+- **Preferred:** `claude-opus-4.6`
+- **Rationale:** Architecture decisions feed ALL other agents. Higher reasoning prevents cascading mistakes.
+
 ## Responsibilities
 
 - Own architecture, planning, and handoff order

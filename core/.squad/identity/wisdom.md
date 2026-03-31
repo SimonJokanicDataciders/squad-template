@@ -62,3 +62,9 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Anti-pattern:** Running build commands without checking project type.
 **Why:** Stack-specific charters may reference .NET commands, but the actual project could be React. Always detect first.
+
+**Anti-pattern:** Blocking on read_agent failures.
+**Why:** Agent sessions expire quickly. read_agent failing does NOT mean the agent failed — it means the session expired. Check status.md and output files on disk instead. Never halt progress because of a read_agent failure.
+
+**Anti-pattern:** Omitting the model parameter when spawning agents.
+**Why:** If model is omitted, the platform picks its own default (often gpt-4.1 free tier). Always pass the model explicitly — even for claude-sonnet-4.6. The user expects the model they configured, not a silent fallback.

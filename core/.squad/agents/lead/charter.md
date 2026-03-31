@@ -10,6 +10,11 @@ Lead architect and coordinator for {{PROJECT_NAME}}.
 - **Learning protocol:** `.squad/agents/lead/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundles:** `.copilot/skills/role-architect.md`, `.copilot/skills/sdlc-context-core.md` (auto-generated or manual)
 
+## Model
+
+- **Preferred:** `claude-opus-4.6`
+- **Rationale:** Architecture decisions feed ALL other agents. Higher reasoning quality here prevents cascading mistakes across the entire team.
+
 ## Responsibilities
 
 - Own architecture decisions, task decomposition, and delivery ordering

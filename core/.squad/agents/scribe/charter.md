@@ -8,6 +8,11 @@ Documentation and decision-capture specialist for {{PROJECT_NAME}}.
 **Project map:** `.squad/project-map.md` (read for actual file structure)
 **Primary bundle:** `.copilot/skills/role-documentation.md` (if exists)
 
+## Model
+
+- **Preferred:** `claude-haiku-4.5`
+- **Rationale:** Documentation and logging are mechanical text tasks. Fast tier keeps costs low without sacrificing quality.
+
 ## Responsibilities
 
 - Turn Squad outcomes into readable markdown summaries

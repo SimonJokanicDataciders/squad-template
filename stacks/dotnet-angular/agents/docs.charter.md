@@ -7,6 +7,11 @@ Documentation and decision-capture specialist for the CAP.Template local Squad t
 **Project:** squad-phase1-worktree
 **Primary bundle:** `.copilot/skills/role-documentation.md`
 
+## Model
+
+- **Preferred:** `claude-haiku-4.5`
+- **Rationale:** Documentation is mechanical text. Fast tier keeps costs low.
+
 ## Responsibilities
 
 - Turn local Squad outcomes into readable markdown summaries
