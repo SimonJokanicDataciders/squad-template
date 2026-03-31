@@ -4,26 +4,39 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET=""
 STACK=""
+AUTO_DETECT=false
+UPGRADE=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --stack) STACK="$2"; shift 2 ;;
+    --auto) AUTO_DETECT=true; shift ;;
+    --upgrade) UPGRADE=true; shift ;;
     -h|--help)
-      echo "Usage: ./init.sh <target-dir> [--stack <preset-name>]"
+      echo "Usage: ./init.sh <target-dir> [OPTIONS]"
       echo ""
       echo "Bootstrap a project with the optimized Squad template."
       echo ""
       echo "Arguments:"
       echo "  <target-dir>              Path to your project (must be a git repo)"
-      echo "  --stack <preset-name>     Stack preset to apply (e.g., dotnet-angular)"
+      echo ""
+      echo "Options:"
+      echo "  --stack <preset-name>     Apply a specific stack preset (e.g., dotnet-angular)"
+      echo "  --auto                    Auto-detect tech stack and apply matching seeds"
+      echo "  --upgrade                 Update existing Squad setup (preserves team/decisions/history)"
       echo ""
       echo "Available presets:"
-      ls -1 "$SCRIPT_DIR/stacks/" | grep -v '^_' 2>/dev/null || echo "  (none yet — use _template to create one)"
+      ls -1 "$SCRIPT_DIR/stacks/" | grep -v '^_' | grep -v 'seeds' 2>/dev/null || echo "  (none yet — use _template to create one)"
+      echo ""
+      echo "Available seeds:"
+      ls -1 "$SCRIPT_DIR/stacks/seeds/" 2>/dev/null | sed 's/.seed.md//' || echo "  (none)"
       echo ""
       echo "Examples:"
-      echo "  ./init.sh ~/my-project --stack dotnet-angular"
-      echo "  ./init.sh ~/my-project                          # core only, no stack preset"
+      echo "  ./init.sh ~/my-project --stack dotnet-angular    # Use full preset"
+      echo "  ./init.sh ~/my-project --auto                    # Auto-detect and apply seeds"
+      echo "  ./init.sh ~/my-project --upgrade                 # Update existing setup"
+      echo "  ./init.sh ~/my-project                           # Core only, no stack preset"
       exit 0
       ;;
     *) TARGET="$1"; shift ;;
@@ -47,6 +60,169 @@ fi
 if [[ ! -d "$TARGET/.git" ]]; then
   echo "Error: '$TARGET' is not a git repository. Run 'git init' first."
   exit 1
+fi
+
+# Handle --upgrade: update core files without overwriting customizations
+if [[ "$UPGRADE" == true ]]; then
+  if [[ ! -d "$TARGET/.squad" ]]; then
+    echo "Error: No existing Squad setup found. Use init.sh without --upgrade first."
+    exit 1
+  fi
+
+  echo "================================================"
+  echo "  Squad Template Upgrade"
+  echo "================================================"
+  echo "  Target: $TARGET"
+  echo ""
+  echo "  Updating: coordinator, skills, workflows, seeds"
+  echo "  Preserving: team.md, decisions, agent histories, config"
+  echo "================================================"
+  echo ""
+
+  # Update coordinator prompt (always overwrite — it's the engine)
+  cp "$SCRIPT_DIR/core/.github/agents/squad.agent.md" "$TARGET/.github/agents/"
+  echo "  ✓ Coordinator prompt updated"
+
+  # Update coordinator skills (always overwrite)
+  cp "$SCRIPT_DIR/core/.copilot/skills/coordinator/"*.md "$TARGET/.copilot/skills/coordinator/" 2>/dev/null || true
+  echo "  ✓ Coordinator skills updated"
+
+  # Update workflows (don't overwrite customized ones)
+  for wf in "$SCRIPT_DIR/core/.github/workflows/"*.yml; do
+    [ -f "$wf" ] && cp -n "$wf" "$TARGET/.github/workflows/" 2>/dev/null || true
+  done
+  echo "  ✓ Workflows updated (new only)"
+
+  # Update seeds
+  if [ -d "$SCRIPT_DIR/stacks/seeds" ]; then
+    mkdir -p "$TARGET/.squad/seeds"
+    cp "$SCRIPT_DIR/stacks/seeds/"*.seed.md "$TARGET/.squad/seeds/" 2>/dev/null || true
+    echo "  ✓ Seeds updated"
+  fi
+
+  # Update shared failure patterns
+  if [ -d "$SCRIPT_DIR/shared" ]; then
+    cp "$SCRIPT_DIR/shared/"*.md "$TARGET/.copilot/skills/" 2>/dev/null || true
+    echo "  ✓ Shared failure patterns updated"
+  fi
+
+  # Update identity templates (wisdom patterns, session state format)
+  cp "$SCRIPT_DIR/core/.squad/identity/"*.md "$TARGET/.squad/identity/" 2>/dev/null || true
+  cp "$SCRIPT_DIR/core/.squad/session-state.md" "$TARGET/.squad/" 2>/dev/null || true
+  echo "  ✓ Identity templates updated"
+
+  echo ""
+  echo "  Upgrade complete. Preserved: team.md, decisions, agent charters,"
+  echo "  agent histories, config.json, routing.md, ceremonies.md"
+  echo ""
+  exit 0
+fi
+
+# Auto-detect tech stack when --auto is used or no --stack specified
+detect_stack() {
+  local dir="$1"
+  DETECTED_TECHS=""
+  MATCHED_SEEDS=""
+  SUGGESTED_PRESET=""
+
+  # Detect technologies from config files
+  [ -f "$dir/package.json" ] && DETECTED_TECHS="$DETECTED_TECHS node"
+  [ -f "$dir/tsconfig.json" ] && DETECTED_TECHS="$DETECTED_TECHS typescript"
+  [ -f "$dir/vite.config.ts" ] || [ -f "$dir/vite.config.js" ] && DETECTED_TECHS="$DETECTED_TECHS vite"
+  [ -f "$dir/angular.json" ] && DETECTED_TECHS="$DETECTED_TECHS angular"
+  [ -f "$dir/next.config.js" ] || [ -f "$dir/next.config.ts" ] || [ -f "$dir/next.config.mjs" ] && DETECTED_TECHS="$DETECTED_TECHS nextjs"
+  ls "$dir"/*.csproj >/dev/null 2>&1 && DETECTED_TECHS="$DETECTED_TECHS dotnet"
+  ls "$dir"/*.sln >/dev/null 2>&1 && DETECTED_TECHS="$DETECTED_TECHS dotnet"
+  [ -f "$dir/pyproject.toml" ] || [ -f "$dir/requirements.txt" ] && DETECTED_TECHS="$DETECTED_TECHS python"
+  [ -f "$dir/go.mod" ] && DETECTED_TECHS="$DETECTED_TECHS go"
+  [ -f "$dir/Cargo.toml" ] && DETECTED_TECHS="$DETECTED_TECHS rust"
+  [ -f "$dir/Gemfile" ] && DETECTED_TECHS="$DETECTED_TECHS ruby"
+  [ -f "$dir/composer.json" ] && DETECTED_TECHS="$DETECTED_TECHS php"
+
+  # Detect from package.json dependencies
+  if [ -f "$dir/package.json" ]; then
+    grep -q '"react"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS react"
+    grep -q '"vue"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS vue"
+    grep -q '"express"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS express"
+    grep -q '"fastify"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS fastify"
+    grep -q '"vitest"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS vitest"
+    grep -q '"jest"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS jest"
+    grep -q '"tailwindcss"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS tailwind"
+    grep -q '"prisma"' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS prisma"
+    grep -q '"@angular' "$dir/package.json" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS angular"
+  fi
+
+  # Detect from Python config
+  if [ -f "$dir/pyproject.toml" ]; then
+    grep -q 'fastapi' "$dir/pyproject.toml" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS fastapi"
+    grep -q 'pytest' "$dir/pyproject.toml" 2>/dev/null && DETECTED_TECHS="$DETECTED_TECHS pytest"
+  fi
+
+  DETECTED_TECHS=$(echo "$DETECTED_TECHS" | xargs | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
+
+  # Match against available seeds
+  if [ -d "$SCRIPT_DIR/stacks/seeds" ]; then
+    for seed_file in "$SCRIPT_DIR/stacks/seeds/"*.seed.md; do
+      [ -f "$seed_file" ] || continue
+      seed_name=$(basename "$seed_file" .seed.md)
+      for tech in $DETECTED_TECHS; do
+        if [[ "$seed_name" == *"$tech"* ]] || [[ "$tech" == *"$seed_name"* ]]; then
+          MATCHED_SEEDS="$MATCHED_SEEDS $seed_name"
+          break
+        fi
+      done
+    done
+    MATCHED_SEEDS=$(echo "$MATCHED_SEEDS" | xargs)
+  fi
+
+  # Suggest preset based on detected stack
+  if echo "$DETECTED_TECHS" | grep -q "dotnet" && echo "$DETECTED_TECHS" | grep -q "angular"; then
+    SUGGESTED_PRESET="dotnet-angular"
+  fi
+}
+
+# Run auto-detection if --auto or no --stack given (and project has source files)
+if [[ "$AUTO_DETECT" == true && -z "$STACK" ]]; then
+  detect_stack "$TARGET"
+
+  echo "================================================"
+  echo "  Stack Auto-Detection"
+  echo "================================================"
+  echo "  Detected: ${DETECTED_TECHS:-nothing}"
+  echo "  Matching seeds: ${MATCHED_SEEDS:-none}"
+  echo "  Suggested preset: ${SUGGESTED_PRESET:-none}"
+  echo "================================================"
+  echo ""
+
+  if [[ -n "$SUGGESTED_PRESET" && -d "$SCRIPT_DIR/stacks/$SUGGESTED_PRESET" ]]; then
+    echo "  → Applying preset: $SUGGESTED_PRESET"
+    STACK="$SUGGESTED_PRESET"
+  elif [[ -n "$MATCHED_SEEDS" ]]; then
+    echo "  → No full preset found. Matching seeds will be available"
+    echo "    for Bootstrap Mode when Squad starts."
+  else
+    echo "  → No matching presets or seeds found."
+    echo "    Squad will use Bootstrap Mode to generate conventions from your first prompt."
+  fi
+  echo ""
+fi
+
+# If no --stack and no --auto, detect stack and show hint
+if [[ -z "$STACK" && "$AUTO_DETECT" == false ]]; then
+  detect_stack "$TARGET"
+  if [[ -n "$DETECTED_TECHS" ]]; then
+    echo "================================================"
+    echo "  Detected tech: $DETECTED_TECHS"
+    if [[ -n "$SUGGESTED_PRESET" ]]; then
+      echo "  Tip: use --stack $SUGGESTED_PRESET for full preset"
+    fi
+    if [[ -n "$MATCHED_SEEDS" ]]; then
+      echo "  Tip: use --auto to apply matching seeds ($MATCHED_SEEDS)"
+    fi
+    echo "  Continuing with core only..."
+    echo "================================================"
+    echo ""
+  fi
 fi
 
 # Get user info for placeholder replacement
