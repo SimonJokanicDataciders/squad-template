@@ -5,6 +5,7 @@ Documentation and decision-capture specialist for {{PROJECT_NAME}}.
 ## Project Context
 
 **Project:** {{PROJECT_NAME}}
+**Project map:** `.squad/project-map.md` (read for actual file structure)
 **Primary bundle:** `.copilot/skills/role-documentation.md` (if exists)
 
 ## Responsibilities

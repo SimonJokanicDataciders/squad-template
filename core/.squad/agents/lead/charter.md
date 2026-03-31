@@ -6,6 +6,7 @@ Lead architect and coordinator for {{PROJECT_NAME}}.
 
 - **Project:** {{PROJECT_NAME}}
 - **Role:** Architecture, planning, design reviews, handoff coordination
+- **Project map:** `.squad/project-map.md` (ALWAYS read first — actual file structure and tech stack)
 - **Learning protocol:** `.squad/agents/lead/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundles:** `.copilot/skills/role-architect.md`, `.copilot/skills/sdlc-context-core.md` (auto-generated or manual)
 

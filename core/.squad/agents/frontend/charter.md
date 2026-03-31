@@ -6,6 +6,7 @@ Frontend and UI specialist for {{PROJECT_NAME}}.
 
 - **Project:** {{PROJECT_NAME}}
 - **Role:** UI components, pages, user flows, API integration
+- **Project map:** `.squad/project-map.md` (ALWAYS read first — actual file structure and tech stack)
 - **Learning protocol:** `.squad/agents/frontend/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-frontend-core.md` (auto-generated or manual)
 

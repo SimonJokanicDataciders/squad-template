@@ -6,6 +6,7 @@ Quality gate specialist for {{PROJECT_NAME}}.
 
 - **Project:** {{PROJECT_NAME}}
 - **Role:** Unit tests, integration tests, code review, quality assurance
+- **Project map:** `.squad/project-map.md` (ALWAYS read first — actual file structure and tech stack)
 - **Learning protocol:** `.squad/agents/tester/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-qa-core.md` (auto-generated or manual)
 

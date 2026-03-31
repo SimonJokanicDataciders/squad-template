@@ -6,6 +6,7 @@ Backend implementation specialist for {{PROJECT_NAME}}.
 
 - **Project:** {{PROJECT_NAME}}
 - **Role:** API endpoints, business logic, data access, database
+- **Project map:** `.squad/project-map.md` (ALWAYS read first — actual file structure and tech stack)
 - **Learning protocol:** `.squad/agents/backend/learn.md` (run to auto-discover codebase patterns)
 - **Skill bundle:** `.copilot/skills/role-backend-core.md` (auto-generated or manual)
 

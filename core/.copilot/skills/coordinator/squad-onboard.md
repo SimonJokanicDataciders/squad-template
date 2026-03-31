@@ -6,28 +6,114 @@
 
 ## Auto-Detection
 
-On session start, after bootstrap reads, check TWO things:
+On session start, after bootstrap reads, check THREE things:
 
 ```bash
-# 1. Do skill bundles exist?
+# 1. Does a project map exist?
+ls .squad/project-map.md 2>/dev/null
+
+# 2. Do skill bundles exist?
 ls .copilot/skills/role-*-core.md 2>/dev/null
 
-# 2. Does source code exist?
+# 3. Does source code exist?
 find . -maxdepth 3 -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.cs" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.rb" -o -name "*.php" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' 2>/dev/null | head -5
 ```
 
 **Decision matrix:**
 
-| Skill bundles exist? | Source code exists? | Action |
-|---------------------|-------------------|--------|
-| YES | any | **Skip onboarding** — proceed normally |
-| NO | YES | **Learn Mode** — scan existing codebase (Phase A) |
-| NO | NO | **Bootstrap Mode** — generate from user's prompt (Phase B) |
+| Project map exists? | Skill bundles exist? | Source code exists? | Action |
+|--------------------|---------------------|-------------------|--------|
+| NO | any | YES | **Phase 0** (project scan) THEN check bundles |
+| YES | YES | any | **Read project-map.md** — proceed normally |
+| YES | NO | YES | **Read project-map.md** — then Learn Mode (Phase A) |
+| NO | NO | NO | **Bootstrap Mode** — generate from user's prompt (Phase B) |
+
+**Phase 0 ALWAYS runs when source code exists but no project-map.md is found.** This is independent of whether skill bundles exist. Stack presets provide conventions; the project map provides the actual file structure.
 
 If onboarding is triggered:
-1. Say which mode: `"🔍 No skill bundles detected. [Learning from existing code / Bootstrapping from your request] — ~60 seconds, one time only."`
-2. Run the appropriate phase
+1. Say which mode: `"🔍 [Scanning project structure / Learning from existing code / Bootstrapping from your request] — ~60 seconds, one time only."`
+2. Run the appropriate phase(s)
 3. After completion, immediately execute the original work request
+
+---
+
+## Phase 0: Project Structure Scan (ALWAYS runs when missing)
+
+This phase generates `.squad/project-map.md` — a live snapshot of the project's actual file structure, tech stack, and key files. **Every agent reads this before starting work.**
+
+**The coordinator runs this directly (no agent spawn needed):**
+
+```bash
+# 1. Detect tech stack
+ls package.json pyproject.toml *.csproj *.sln go.mod Cargo.toml Gemfile pom.xml composer.json \
+   angular.json next.config.* vite.config.* tsconfig.json 2>/dev/null
+
+# 2. Get project tree (exclude noise)
+find . -maxdepth 4 -type f \
+  -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' \
+  -not -path '*/bin/*' -not -path '*/obj/*' -not -path '*/.squad/*' \
+  -not -path '*/.copilot/*' -not -path '*/.github/*' \
+  -not -name '*.lock' -not -name 'package-lock.json' \
+  | sort
+
+# 3. Read key config files for stack details
+cat package.json 2>/dev/null || cat pyproject.toml 2>/dev/null || cat *.csproj 2>/dev/null
+```
+
+**Then write `.squad/project-map.md`:**
+
+```markdown
+# Project Map
+
+> Auto-generated on {timestamp}. Updated each session when structure changes.
+
+## Tech Stack
+
+- **Language:** {detected from config files}
+- **Framework:** {detected from dependencies}
+- **Build tool:** {detected}
+- **Test framework:** {detected}
+- **Styling:** {detected}
+
+## File Structure
+
+{full tree output, organized by directory}
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| {entry point} | Application entry point |
+| {config files} | Configuration |
+| {main components/modules} | Core application code |
+
+## Key Commands
+
+- Install: {from scripts or detected}
+- Dev: {from scripts}
+- Build: {from scripts}
+- Test: {from scripts}
+- Lint: {from scripts}
+
+## Directory Ownership
+
+| Directory | Primary Agent |
+|-----------|--------------|
+| {src/api or backend paths} | Backend |
+| {src/components or frontend paths} | Frontend |
+| {tests/ or __tests__/} | Tester |
+| {docs/} | Scribe |
+| {build/ or infra/} | Ralph |
+```
+
+**After generating, announce:**
+```
+📂 Project structure scanned → .squad/project-map.md
+   {N} source files across {M} directories
+   Stack: {summary}
+```
+
+**Refresh trigger:** If the coordinator detects significant new files during a session (agent created 5+ files), re-run Phase 0 to update the map.
 
 ---
 
