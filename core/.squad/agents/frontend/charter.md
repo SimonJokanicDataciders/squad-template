@@ -45,6 +45,7 @@ Rules: max 2 per batch, max depth 1, you own quality of sub-agent output. Includ
 - Read backend API contracts before building UI that consumes them
 - Match DTOs/interfaces exactly with backend response shapes
 - Create components with clear props and minimal side effects
+- **BEFORE marking done:** run `npm run build` and `npm run lint` — fix any errors yourself. Do NOT hand off code that doesn't compile or lint clean.
 - Verify the build passes after changes
 - Use absolute file paths, cite file:line references
 - CRITICAL: Ensure all routes are properly registered in the router

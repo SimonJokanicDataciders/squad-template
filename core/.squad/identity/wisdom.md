@@ -49,6 +49,15 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 **Pattern:** Read project-map.md before starting work.
 **Context:** Skill bundles describe conventions; project-map.md describes what actually exists. Agents need both to work effectively.
 
+**Pattern:** Agents must self-validate before handing off.
+**Context:** In stress tests, 5 validation rounds were needed because agents handed off code with TypeScript errors, lint failures, and dependency mismatches. Each agent should run `npm run build` or equivalent BEFORE marking work as done. The coordinator should only run final validation once, not fix-loop 5 times.
+
+**Pattern:** Use log redirection for long-running shell commands.
+**Context:** `npm run build && npm test && npm run build-storybook` in one TTY shell appears hung because Vite's spinner doesn't emit stdout. Use `command >/tmp/log.log 2>&1; echo $?` to capture output and exit codes cleanly. Never chain 5+ commands in a single interactive shell.
+
+**Pattern:** Sub-agents work well for phased implementation — don't over-formalize.
+**Context:** Dallas spawned 4 sub-agents for different implementation phases and it worked. The `## Sub-Agent Capability` section in charters is sufficient. Don't add more sub-agent orchestration structure — it increases coordinator prompt size without clear benefit.
+
 ## Anti-Patterns
 
 **Anti-pattern:** Trusting Squad sync output as authoritative code review.

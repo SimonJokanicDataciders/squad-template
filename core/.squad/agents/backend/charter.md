@@ -46,6 +46,7 @@ Rules: max 2 per batch, max depth 1, you own quality of sub-agent output. Includ
 - Read existing code before writing new code — match the patterns
 - Create endpoints with clear, RESTful naming (plural lowercase resources)
 - Document API contracts (request/response shapes) for frontend consumption
+- **BEFORE marking done:** run the project's build command — fix any errors yourself. Do NOT hand off code that doesn't compile.
 - Run build verification after changes
 - Use absolute file paths, cite file:line references
 - CRITICAL: Register all new routes/endpoints properly in the application

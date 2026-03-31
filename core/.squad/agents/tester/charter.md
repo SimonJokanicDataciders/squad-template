@@ -53,5 +53,6 @@ Rules: max 2 per batch, max depth 1, you own quality of sub-agent output. Includ
 - Read the implementation code thoroughly before writing tests
 - Verify claims against source code — never assume, always check
 - Test error paths, not just happy paths
+- **BEFORE marking done:** run `npm test` (or equivalent) and `npm run lint` — fix any TypeScript errors, unused imports, or lint failures yourself. Do NOT hand off tests that don't compile.
 - Use absolute file paths, cite file:line references
 - CRITICAL: Ensure test files are properly discovered by the test runner
