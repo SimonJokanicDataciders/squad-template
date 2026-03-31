@@ -341,6 +341,70 @@ if [[ -n "$STACK" ]]; then
     done
   fi
 
+  # Apply cast name mapping (rename agent directories to stack-specific names)
+  if [[ -f "$STACK_DIR/cast.conf" ]]; then
+    echo "     Applying cast names..."
+    while IFS='=' read -r role cast; do
+      # Skip comments and empty lines
+      [[ "$role" =~ ^#.*$ || -z "$role" ]] && continue
+      role=$(echo "$role" | tr -d ' ')
+      cast=$(echo "$cast" | tr -d ' ')
+
+      # Skip if role and cast are the same (no rename needed)
+      [[ "$role" == "$cast" ]] && continue
+
+      # Rename agent directory from role name to cast name
+      if [[ -d "$TARGET/.squad/agents/$role" && ! -d "$TARGET/.squad/agents/$cast" ]]; then
+        mv "$TARGET/.squad/agents/$role" "$TARGET/.squad/agents/$cast"
+        echo "     Renamed agent: $role → $cast"
+      fi
+    done < "$STACK_DIR/cast.conf"
+
+    # Regenerate team.md with cast names
+    echo "     Regenerating team.md with cast names..."
+    MEMBERS_TABLE=""
+    while IFS='=' read -r role cast; do
+      [[ "$role" =~ ^#.*$ || -z "$role" ]] && continue
+      role=$(echo "$role" | tr -d ' ')
+      cast=$(echo "$cast" | tr -d ' ')
+      display_name="$(echo "$cast" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
+      case "$role" in
+        lead)     role_label="Architect";      status_emoji="🏗️ Active" ;;
+        backend)  role_label="Backend Dev";    status_emoji="🔧 Active" ;;
+        frontend) role_label="Frontend Dev";   status_emoji="⚛️ Active" ;;
+        tester)   role_label="QA / Tester";    status_emoji="🧪 Active" ;;
+        scribe)   role_label="Session Logger"; status_emoji="📋 Silent" ;;
+        ralph)    role_label="Work Monitor";   status_emoji="🔄 Monitor" ;;
+        *)        role_label="$role";          status_emoji="🔧 Active" ;;
+      esac
+      MEMBERS_TABLE="$MEMBERS_TABLE| $display_name | $role_label | .squad/agents/$cast/charter.md | $status_emoji |
+"
+    done < "$STACK_DIR/cast.conf"
+
+    cat > "$TARGET/.squad/team.md" << CAST_TEAM_EOF
+# Squad Team
+
+> $PROJECT_NAME
+
+## Coordinator
+
+| Name | Role | Notes |
+|------|------|-------|
+| Squad | Coordinator | Routes work, enforces handoffs and reviewer gates. |
+
+## Members
+
+| Name | Role | Charter | Status |
+|------|------|---------|--------|
+${MEMBERS_TABLE}
+## Project Context
+
+- **Project:** $PROJECT_NAME
+- **Created:** $(date +%Y-%m-%d)
+CAST_TEAM_EOF
+    echo "     Team roster updated with cast names."
+  fi
+
   echo "     Done."
 else
   echo "4/5  No stack preset — using generic agent charters."
@@ -373,7 +437,12 @@ echo "  Squad template applied successfully!"
 echo "================================================"
 echo ""
 echo "  Files:    $TOTAL_FILES"
-echo "  Team:     Lead, Backend, Frontend, Tester, Scribe, Ralph"
+if [[ -n "$STACK" && -f "$SCRIPT_DIR/stacks/$STACK/cast.conf" ]]; then
+  CAST_LIST=$(grep -v '^#' "$SCRIPT_DIR/stacks/$STACK/cast.conf" | grep -v '^$' | cut -d= -f2 | tr -d ' ' | awk '{print toupper(substr($0,1,1)) substr($0,2)}' | paste -sd', ' -)
+  echo "  Team:     $CAST_LIST"
+else
+  echo "  Team:     Lead, Backend, Frontend, Tester, Scribe, Ralph"
+fi
 echo "  Routing:  .squad/routing.md"
 echo "  Charters: .squad/agents/*/charter.md"
 echo ""
