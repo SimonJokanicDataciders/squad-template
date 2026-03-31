@@ -8,32 +8,80 @@ source: "manual"
 
 # Frontend Developer — Core Skill Bundle
 
-<!-- TODO: Fill in your project's frontend conventions, component patterns, and reference implementation details -->
-
 ## Project Structure
 
-<!-- TODO: Document your frontend directory layout -->
+<!-- Replace with YOUR project's actual directory layout. Example: -->
+```
+src/
+├── app/
+│   ├── {feature}/           # One folder per feature
+│   │   ├── {feature}.routes.ts      # Lazy-loaded routes
+│   │   ├── {feature}-list/          # List component
+│   │   ├── {feature}-detail/        # Detail component
+│   │   ├── {feature}-form/          # Create/edit form
+│   │   └── {feature}.service.ts     # API service
+│   ├── shared/              # Shared components, pipes, directives
+│   └── app.routes.ts        # Root route configuration
+├── components/              # Reusable UI components
+├── stores/                  # State management (if applicable)
+├── types/                   # Shared TypeScript interfaces
+├── api/                     # API client layer
+└── assets/                  # Static assets
+```
 
 ## Component Pattern
 
-<!-- TODO: Document how components are structured -->
+<!-- Replace with YOUR component pattern. Example: -->
+```
+// Your component pattern goes here
+// Copy a REAL component from your reference implementation
+// Include: imports, component decorator/function, props/inputs, template
+```
+
+**Rules:**
+- One component per file
+- Use strict TypeScript — no `any` types
+- Handle loading, error, and empty states
+- Props/inputs should have clear types and defaults
+- Cleanup subscriptions/effects on destroy
 
 ## Service / Data Access Pattern
 
-<!-- TODO: Document how frontend services call the API -->
+<!-- Replace with YOUR service pattern. Example: -->
+```
+// Your API service pattern goes here
+// Copy a REAL service from your reference implementation
+// Include: HTTP client usage, error handling, type mapping
+```
+
+**Rules:**
+- All API calls through a service layer (never call fetch/http directly in components)
+- Type all request/response shapes — match backend DTOs exactly
+- Handle errors consistently (show user-friendly messages)
 
 ## Routing Pattern
 
-<!-- TODO: Document routing conventions (lazy loading, guards, etc.) -->
+<!-- Replace with YOUR routing conventions. Example: -->
+- Lazy-load feature routes for code splitting
+- Use guards for authenticated routes
+- Define routes in a dedicated routes file per feature
+- Register feature routes in the root router via `loadChildren` or dynamic imports
 
 ## State Management
 
-<!-- TODO: Document state management approach -->
+<!-- Replace with YOUR state management approach. Example: -->
+- Use signals/stores for shared state (Zustand, NgRx signals, Vue Pinia)
+- Component-local state for UI-only concerns
+- Persist auth state to localStorage if needed
+- Keep stores focused — one store per domain
 
 ## Frontend Checklist
 
-- [ ] Components follow project conventions
-- [ ] Types/interfaces match backend DTOs
-- [ ] Routes are properly registered
-- [ ] No `any` types used
-- [ ] Build passes after changes
+- [ ] Components follow project conventions (read reference implementation first)
+- [ ] Types/interfaces match backend DTOs exactly
+- [ ] Routes are properly registered and lazy-loaded
+- [ ] No `any` types used anywhere
+- [ ] Loading, error, and empty states handled
+- [ ] No `innerHTML` with user input
+- [ ] Build passes with zero errors after changes
+- [ ] Lint passes with zero warnings

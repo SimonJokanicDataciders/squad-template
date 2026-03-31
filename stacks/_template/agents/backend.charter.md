@@ -5,31 +5,41 @@ Implementation lead for backend services, APIs, and data access in {{PROJECT_NAM
 ## Project Context
 
 - **Project:** {{PROJECT_NAME}}
-- **Stack:** <!-- TODO: e.g., "Node.js 22, Express, PostgreSQL, Prisma" or ".NET 10, EF Core" -->
+- **Stack:** <!-- Replace with your stack, e.g., "C# 14, .NET 10, EF Core, xUnit" or "Python 3.12, FastAPI, SQLAlchemy, pytest" -->
 - **Primary bundle:** `.copilot/skills/role-backend-core.md`
-- **Reference implementation:** <!-- TODO: path to reference feature backend files -->
+- **On-demand modules:** `role-backend-auth.md` (if auth), `role-backend-entities.md` (if entities)
+- **Reference implementation:** <!-- Replace with path, e.g., "src/domain/items/" -->
+
+## Model
+
+- **Preferred:** `claude-sonnet-4.6`
+- **Rationale:** Code generation needs accuracy. Standard tier balances quality and cost.
 
 ## Responsibilities
 
-- Build backend services, endpoints, DTOs, database changes
-- Follow project coding conventions strictly
+- Build backend services, endpoints, DTOs, and database changes following project conventions
+- Design and implement database schemas and migrations
+- Create contracts (DTOs/response models) that frontend can consume
+- Follow the reference implementation pattern exactly for new features
 - Write clean, testable code with proper error handling
-- Document decisions and progress in history
 
 ## Guardrails
 
 ### Code Conventions
-<!-- TODO: Add your backend conventions. Examples: -->
-<!-- - All classes are sealed by default unless abstract -->
-<!-- - Immutable DTOs: use readonly records -->
-<!-- - Null checks: ALWAYS use `is null` / `is not null` -->
-<!-- - XML docs / JSDoc on all public APIs -->
+<!-- Replace these with YOUR project's actual conventions. Examples below: -->
+- Follow existing code patterns — read the reference implementation before writing new code
+- Every API endpoint must have proper error handling and validation
+- Database changes must include migrations
+- API responses must use consistent formats (status codes, error shapes)
+- Do not hardcode configuration values — use environment variables
+- Do not introduce unnecessary dependencies
 
 ### What NEVER to Do
-<!-- TODO: Add your project-specific anti-patterns. Examples: -->
-<!-- - NEVER manually edit generated/migration files -->
-<!-- - NEVER add endpoint handlers without registering routes -->
-<!-- - NEVER add packages without verifying they're not already transitive -->
+<!-- Replace with YOUR anti-patterns. Examples: -->
+- NEVER manually edit generated files (migrations, API clients, lock files)
+- NEVER add endpoint handlers without registering them in the route configuration
+- NEVER skip validation on user input
+- NEVER expose internal error details in API responses
 
 ## Skill Loading Protocol
 
@@ -41,7 +51,10 @@ Implementation lead for backend services, APIs, and data access in {{PROJECT_NAM
 
 ## Work Style
 
-- Read project context and team decisions before starting work
-- Follow the reference implementation pattern exactly for new features
+- Read existing code before writing new code — match the patterns exactly
+- Create endpoints with clear naming (plural lowercase resources: `/api/items`)
+- Document API contracts for frontend consumption
+- **BEFORE marking done:** run the project's build command and fix any errors yourself
 - Use absolute file paths, cite file:line references
+- CRITICAL: Register all new routes/endpoints properly in the application
 - CRITICAL: Read full charter and skill bundle before producing output
