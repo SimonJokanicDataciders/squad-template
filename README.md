@@ -16,13 +16,31 @@ Replaces the default `squad init` (127 files of generic scaffolding) with an opt
 # 1. Clone this template repo
 git clone <your-repo-url> ~/squad-template
 
-# 2. Bootstrap your project (must be a git repo)
-~/squad-template/init.sh ~/my-project --stack dotnet-angular
+# 2. Bootstrap Squad into your project (any existing git repo)
+~/squad-template/init.sh ~/path/to/your-project --stack dotnet-angular
 
 # 3. Start Squad
-cd ~/my-project
+cd ~/path/to/your-project
 copilot --agent squad
 ```
+
+> **Note:** `init.sh` works on any existing git repo — new or established. It adds the `.squad/`, `.github/agents/`, and `.copilot/skills/` directories alongside your existing code without modifying it. You can run it on a brand new `git init` project or on a mature codebase with thousands of files.
+>
+> **New project:**
+> ```bash
+> mkdir ~/my-app && cd ~/my-app && git init
+> ~/squad-template/init.sh ~/my-app --stack dotnet-angular
+> ```
+>
+> **Existing project:**
+> ```bash
+> ~/squad-template/init.sh ~/work/existing-api --stack dotnet-angular
+> ```
+>
+> Omit `--stack` to get generic agent charters without stack-specific conventions:
+> ```bash
+> ~/squad-template/init.sh ~/my-project
+> ```
 
 ## What's Inside
 
