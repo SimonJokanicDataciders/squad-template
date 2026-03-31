@@ -4,6 +4,12 @@ Reusable template for bootstrapping production-quality [Squad](https://github.co
 
 Replaces the default `squad init` (127 files of generic scaffolding) with an optimized engine and pre-built stack presets containing real domain knowledge.
 
+> **Important: Model Requirement**
+>
+> Multi-agent model selection (opus for architect, sonnet for code agents, haiku for docs) **only works with GPT-5.1 HIGH** as the Copilot CLI model. This is the only model that properly caches premium requests across agent spawns.
+>
+> With any other CLI model, the coordinator cannot route models per-agent — all agents will default to whatever single model the CLI was opened with. If you're seeing all agents use `gpt-4.1` or the same model regardless of charter preferences, switch to GPT-5.1 HIGH.
+
 ## Quick Start
 
 ```bash
