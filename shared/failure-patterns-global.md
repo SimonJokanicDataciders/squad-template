@@ -77,6 +77,44 @@ to the squad-template repo so all future projects benefit.
 **Correction:** Run build + test after every implementation phase.
 **Mitigation:** Coordinator auto-runs build/test validation after each implementation agent completes.
 
+### 10. Parallel Database Queries on Shared Connection/Context
+
+**What happened:** Agent optimized by running multiple database queries in parallel using `Task.WhenAll`, `Promise.all`, or `asyncio.gather`, but all queries shared the same database connection/session/context. Most ORMs (EF Core, SQLAlchemy, Prisma in some modes) are NOT thread-safe per connection.
+
+**Correction:** Run queries sequentially on the same connection. If parallelism is truly needed, create a separate connection/session per parallel task.
+
+**Mitigation:**
+- **WRONG:** `await Promise.all([db.query(...), db.query(...)])` on same connection
+- **CORRECT:** `const a = await db.query(...); const b = await db.query(...);` (sequential)
+- This applies to: EF Core DbContext, SQLAlchemy Session, Prisma in some transaction modes, Django ORM connections
+
+### 11. Frontend Build Walks Into Backend Output Directories
+
+**What happened:** In a mixed frontend+backend repo, the frontend build tool (TypeScript compiler, Vite, Webpack) walked into the backend's build output directories (e.g., `obj/`, `bin/`, `target/`, `__pycache__/`) and tried to process those files, causing build failures.
+
+**Correction:** Frontend build configuration must explicitly exclude backend build output directories.
+
+**Mitigation:**
+- Add backend output dirs to frontend's exclude config (tsconfig, vite.config, webpack.config)
+- Common excludes: `obj/`, `bin/`, `target/`, `dist/`, `build/`, `__pycache__/`, `.gradle/`
+- Check this whenever a new backend project is added to a repo that also has a frontend
+
+### 12. Environment Setup Taking >10 Minutes
+
+**What happened:** The coordinator spent 45+ minutes retrying `dotnet restore`, `npm install`, or Docker startup instead of reporting the issue to the user.
+
+**Correction:** If any environment command doesn't complete within 10 minutes, stop and report. The user can fix their environment faster than the coordinator can guess.
+
+**Mitigation:** Set a mental time budget of 10 minutes for environment tasks. After that: stop, report what's wrong, suggest the fix, and ask the user to resolve it.
+
+### 13. Wrong Database Provider
+
+**What happened:** The coordinator assumed PostgreSQL but the project was configured for SQL Server (or vice versa), causing connection failures.
+
+**Correction:** Always check the actual code (`UseSqlServer` vs `UseNpgsql` vs `UseSqlite`) before starting database containers or constructing connection strings. Never guess.
+
+**Mitigation:** Pre-flight check: `grep -r "UseSqlServer\|UseNpgsql\|UseSqlite" src/` to detect the configured provider.
+
 ---
 
 <!-- Add new patterns below. Use sequential numbering. -->
