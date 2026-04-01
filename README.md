@@ -1,99 +1,182 @@
 # Squad Template
 
-Reusable template for bootstrapping production-quality [Squad](https://github.com/bradygaster/squad) teams on any project.
+Your AI development team, ready in 60 seconds.
 
-Replaces the default `squad init` (127 files of generic scaffolding) with an optimized engine and pre-built stack presets containing real domain knowledge.
+This template replaces the default `squad init` (127 generic files) with an optimized engine that gives your agents real domain knowledge, auto-proceeds through the pipeline, and routes the right model to the right agent.
 
-> **Important: Model Requirement**
->
-> Multi-agent model selection (opus for architect, sonnet for code agents, haiku for docs) **only works with GPT-5.1 HIGH** as the Copilot CLI model. This is the only model that properly caches premium requests across agent spawns.
->
-> With any other CLI model, the coordinator cannot route models per-agent — all agents will default to whatever single model the CLI was opened with. If you're seeing all agents use `gpt-4.1` or the same model regardless of charter preferences, switch to GPT-5.1 HIGH.
+> **Model Requirement:** Multi-agent model routing (opus for architect, sonnet for code, haiku for docs) **only works with GPT-5.1 HIGH** as the Copilot CLI model. With any other model, all agents default to the CLI's single model.
 
-## Quick Start
+---
+
+## Getting Started
+
+### 1. Clone this repo
 
 ```bash
-# 1. Clone this template repo
 git clone <your-repo-url> ~/squad-template
+```
 
-# 2. Bootstrap Squad into your project (any existing git repo)
-~/squad-template/init.sh ~/path/to/your-project --stack dotnet-angular
+### 2. Bootstrap your project
 
-# 3. Start Squad
-cd ~/path/to/your-project
+Pick the method that fits your situation:
+
+```bash
+# Auto-detect your tech stack and apply matching preset/seeds automatically
+~/squad-template/init.sh ~/my-project --auto
+
+# Or specify a stack preset explicitly
+~/squad-template/init.sh ~/my-project --stack dotnet-angular
+
+# Or just the core engine (no stack-specific conventions)
+~/squad-template/init.sh ~/my-project
+```
+
+### 3. Start Squad
+
+```bash
+cd ~/my-project
 copilot --agent squad
 ```
 
-> **Note:** `init.sh` works on any existing git repo — new or established. It adds the `.squad/`, `.github/agents/`, and `.copilot/skills/` directories alongside your existing code without modifying it. You can run it on a brand new `git init` project or on a mature codebase with thousands of files.
->
-> **New project:**
-> ```bash
-> mkdir ~/my-app && cd ~/my-app && git init
-> ~/squad-template/init.sh ~/my-app --stack dotnet-angular
-> ```
->
-> **Existing project:**
-> ```bash
-> ~/squad-template/init.sh ~/work/existing-api --stack dotnet-angular
-> ```
->
-> Omit `--stack` to get generic agent charters without stack-specific conventions:
-> ```bash
-> ~/squad-template/init.sh ~/my-project
-> ```
+That's it. Your project now has 6 AI agents ready to work.
 
-## What's Inside
+---
+
+## Works on Any Project
+
+`init.sh` adds Squad files alongside your existing code — it never modifies your source files.
+
+```bash
+# New project
+mkdir ~/my-app && cd ~/my-app && git init
+~/squad-template/init.sh ~/my-app --auto
+
+# Existing project with thousands of files
+~/squad-template/init.sh ~/work/existing-api --auto
+
+# Already have Squad? Update without losing your customizations
+~/squad-template/init.sh ~/my-project --upgrade
+```
+
+---
+
+## CLI Reference
+
+| Command | What it does |
+|---------|-------------|
+| `init.sh <dir>` | Core engine only (generic agents, no stack preset) |
+| `init.sh <dir> --auto` | Auto-detect tech stack, apply matching preset or seeds |
+| `init.sh <dir> --stack <name>` | Apply a specific stack preset (e.g., `dotnet-angular`) |
+| `init.sh <dir> --upgrade` | Update coordinator, skills, workflows — preserves team, decisions, history |
+| `init.sh --help` | Show all options, available presets, and seeds |
+
+---
+
+## What You Get
+
+### 6 Agents with Model Routing
+
+| Agent | Role | Model | Cost |
+|-------|------|-------|------|
+| Lead / Ripley | Architecture, planning, contracts | `claude-opus-4.6` | Premium (3x) |
+| Backend / Fenster | API, services, database | `claude-sonnet-4.6` | Standard (1x) |
+| Frontend / Dallas | UI, components, styling | `claude-sonnet-4.6` | Standard (1x) |
+| Tester / Hockney | Tests, code review, QA | `claude-sonnet-4.6` | Standard (1x) |
+| Scribe | Documentation, decisions | `claude-haiku-4.5` | Fast (0.33x) |
+| Ralph | Ops, security, triage | `claude-haiku-4.5` | Fast (0.33x) |
+
+### Auto-Proceed Pipeline
+
+The coordinator runs the full pipeline autonomously:
+
+```
+design → plan → implement → test → document → done
+```
+
+No "would you like to proceed?" prompts. No menus. Just results.
+
+### Stack Auto-Detection
+
+When you use `--auto`, the script detects your tech stack from config files:
+
+| File Found | Tech Detected |
+|------------|--------------|
+| `package.json` | Node.js + dependencies (React, Angular, Express, etc.) |
+| `*.csproj` / `*.sln` | .NET |
+| `angular.json` | Angular |
+| `pyproject.toml` | Python (+ FastAPI, pytest if in dependencies) |
+| `go.mod` | Go |
+| `Cargo.toml` | Rust |
+| `vite.config.*` | Vite |
+| `tsconfig.json` | TypeScript |
+
+It then matches against available presets and 15 built-in seeds (React, Express, FastAPI, .NET, Angular, Prisma, xUnit, Vitest, and more).
+
+---
+
+## Project Structure
 
 ```
 squad-template/
-├── core/                    # Universal Squad engine (every project)
-│   ├── .github/agents/      #   Optimized coordinator (800 lines)
-│   ├── .copilot/skills/     #   10 coordinator modules
-│   ├── .squad/              #   Pre-seeded wisdom, templates, casting
+├── core/                    # Universal engine (copied to every project)
+│   ├── .github/agents/      #   Coordinator prompt (~1200 lines, on-demand modules)
+│   ├── .copilot/skills/     #   11 coordinator skill modules
+│   ├── .squad/              #   Wisdom, templates, casting, config
 │   └── .github/workflows/   #   GitHub Actions for triage/labels
 │
 ├── stacks/                  # Stack-specific presets
-│   ├── dotnet-angular/      #   .NET 10 + Angular 21 (from CAP Template)
-│   │   ├── agents/          #     6 agent charter references
-│   │   ├── skills/          #     22 embedded knowledge bundles
-│   │   ├── routing.md       #     Pre-filled routing table
-│   │   └── ceremonies.md    #     Quality gates with stack triggers
-│   └── _template/           #   Blank preset for new stacks
+│   ├── dotnet-angular/      #   .NET 10 + Angular 21 (22 skill bundles, 6 charters)
+│   ├── _template/           #   Ready-to-customize template for new stacks
+│   └── seeds/               #   15 lightweight tech seeds (React, FastAPI, etc.)
 │
-├── docs/                    # Setup guides
-│   ├── ARCHITECTURE.md      #   How the template works
-│   └── CUSTOMIZATION_GUIDE.md  # Creating new stack presets
-│
-└── init.sh                  # Bootstrap script
+├── shared/                  # Cross-project failure patterns
+├── docs/                    # Architecture docs, customization guide
+└── init.sh                  # Bootstrap / upgrade script
 ```
+
+---
 
 ## Why Not Just `squad init`?
 
-| Aspect | `squad init` | This Template |
-|--------|-------------|---------------|
-| Files created | 127 (mostly empty) | ~40 meaningful |
-| Agent charters | "Collaborate with team" | Embedded domain knowledge, guardrails, skill loading |
-| Skills | 28 generic | Stack-specific conventions + failure patterns |
-| Routing | Placeholders | Precise phase-to-agent mapping |
-| Wisdom | Empty | Pre-seeded with battle-tested patterns |
-| Coordinator | 21,600 lines (default) | 800 lines (optimized, on-demand modules) |
-| Auto-proceed | No (asks "ready?" between phases) | Yes (autonomous pipeline) |
-| Context overhead | Loads everything | Tiered: core always + on-demand by task |
+| | `squad init` | This Template |
+|---|---|---|
+| **Files** | 127 (mostly empty) | ~40 meaningful |
+| **Agent charters** | "Collaborate with team" | Embedded conventions, guardrails, model preferences |
+| **Skills** | 28 generic | Stack-specific patterns + failure prevention |
+| **Routing** | Placeholders | Precise phase-to-agent mapping |
+| **Wisdom** | Empty | Pre-seeded with battle-tested patterns |
+| **Coordinator** | 21,600 lines (loads everything) | ~1200 lines (tiered: core always + on-demand) |
+| **Auto-proceed** | Asks "ready?" between phases | Autonomous pipeline, banned confirmation phrases |
+| **Model routing** | Single model for all | Per-agent (opus/sonnet/haiku by role) |
+| **Self-validation** | None | Agents run build/lint before handing off |
+| **Upgrade path** | None | `--upgrade` preserves customizations |
 
-## Creating a New Stack Preset
+---
 
-1. Copy `stacks/_template/` to `stacks/{your-stack}/`
-2. Fill in agent charters with your conventions and guardrails
-3. Write skill bundles with embedded domain knowledge
-4. Customize routing and ceremonies
-5. Run a benchmark, document failures
+## Adding a New Stack
 
-See `docs/CUSTOMIZATION_GUIDE.md` for the full walkthrough.
+```bash
+# 1. Copy the template (all files have real structure, not empty TODOs)
+cp -r ~/squad-template/stacks/_template ~/squad-template/stacks/python-fastapi
+
+# 2. Customize the files (~2-4 hours):
+#    agents/*.charter.md  → Your conventions and guardrails
+#    skills/*.md           → Real code examples from your project
+#    routing.md            → Work type routing
+#    cast.conf             → Custom agent names (optional)
+
+# 3. Apply to any project
+~/squad-template/init.sh ~/my-project --stack python-fastapi
+```
+
+The `_template/` directory contains ready-to-customize files with `<!-- Replace -->` markers showing exactly what to fill in. See `stacks/_template/README.md` for a full checklist with time estimates.
+
+---
 
 ## Architecture
 
-The template uses a 3-tier separation:
+Three tiers, each more specific:
 
-- **Core** (Tier 1) — Universal orchestration: coordinator, workflows, wisdom, drop-box pattern. Copy to every project verbatim.
-- **Stack Preset** (Tier 2) — Stack-specific knowledge: coding conventions, testing patterns, reference implementations. Pick one per project.
-- **Per-Project** (Tier 3) — Generated at runtime: team roster, cast names, decisions, session history. Created by Squad's Init Mode.
+1. **Core** — Universal orchestration (coordinator, workflows, wisdom). Identical across all projects.
+2. **Stack Preset** — Tech-specific knowledge (coding conventions, test patterns, failure prevention). One per project.
+3. **Per-Project** — Generated at runtime (team roster, cast names, decisions, session history). Unique to each project.
