@@ -41,7 +41,13 @@ echo "JAVA:$(java -version 2>&1 | head -1 || echo MISSING)"
 # 5. Docker
 echo "DOCKER:$(docker info >/dev/null 2>&1 && echo RUNNING || echo NOT_RUNNING)"
 
-# 6. Key ports free
+# 6. Database provider detection (for .NET projects)
+if ls *.sln *.csproj 2>/dev/null | head -1 >/dev/null 2>&1; then
+  grep -rl "UseSqlServer\|AddSqlServer" src/ 2>/dev/null | head -1 && echo "DB_PROVIDER:SqlServer"
+  grep -rl "UseNpgsql\|AddNpgsqlDbContext" src/ 2>/dev/null | head -1 && echo "DB_PROVIDER:PostgreSQL"
+fi
+
+# 7. Key ports free
 for port in 5000 5043 4200 63564 1433 5432; do
   if lsof -nP -iTCP:$port -sTCP:LISTEN >/dev/null 2>&1; then
     echo "PORT_IN_USE:$port"
@@ -66,6 +72,7 @@ done
 | node_modules missing | npm install needed | Auto-run `npm install` before first build |
 | Java missing | OpenAPI client generation will fail | Report: "Java is not installed. OpenAPI client generation will be skipped. Install via `brew install openjdk`." |
 | Port in use | Service may fail to bind | Report which ports are occupied. May need to stop other processes. |
+| DB provider detected | Know which database to start | If SqlServer → use SQL Server/Azure SQL Edge container (port 1433). If PostgreSQL → use Postgres container (port 5432). **Never guess — check the code.** |
 
 ### Info (log only)
 

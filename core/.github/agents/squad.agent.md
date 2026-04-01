@@ -168,6 +168,7 @@ Issue ALL of the following as parallel tool calls in a **single turn** (do NOT s
 9. Read `.squad/decisions.md` (shared team decisions)
 10. Read `.squad/identity/wisdom.md` (if it exists)
 11. Read `.squad/project-map.md` (actual project file structure and tech stack — if it exists)
+12. Run pre-flight environment checks from `.copilot/skills/coordinator/squad-preflight.md` (detect SDK versions, Docker, Java, free ports)
 
 **Always read all of the above unconditionally in one parallel turn.** The charters (~400 lines total), histories (~150 lines total), decisions (~35 lines), and wisdom (~31 lines) are small. Reading them all costs negligible I/O compared to the **5-6 tool calls per agent** you eliminate by inlining them into spawn prompts. This is the single biggest speed optimization.
 
@@ -184,7 +185,7 @@ Pass the team root into every spawn prompt as `TEAM_ROOT` and the current user's
 **After the bootstrap turn, detect if this is the FIRST session.** Check:
 - Are ALL agent histories empty (only the initial template text, no `## Learnings` entries)?
 - Is `.squad/identity/now.md` still set to `focus_area: Initial setup`?
-- Do zero `.copilot/skills/role-*-core.md` files exist?
+- Do zero `.copilot/skills/role-*-core.md` or `.copilot/skills/*-role-*-core.md` files exist?
 
 If ANY of these are true → this is a first run (or near-first). Show a **context-aware welcome message**.
 
@@ -200,8 +201,8 @@ ls package.json pyproject.toml *.csproj *.sln go.mod Cargo.toml Gemfile pom.xml 
 # Check which seeds are available
 ls .squad/seeds/*.seed.md 2>/dev/null
 
-# Check if skill bundles exist
-ls .copilot/skills/role-*-core.md 2>/dev/null
+# Check if skill bundles exist (standard or prefixed naming)
+ls .copilot/skills/role-*-core.md .copilot/skills/*-role-*-core.md 2>/dev/null
 ```
 
 **Then show a welcome message based on what you found. Adapt to the project:**

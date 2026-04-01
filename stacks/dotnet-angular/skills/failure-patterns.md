@@ -84,6 +84,23 @@ var actions = await _context.RecentActions.Where(...).ToListAsync();
 - [ ] No `.AsParallel()` on IQueryable
 - [ ] If parallelism is truly needed, use `IDbContextFactory<T>`
 
+### 12. Angular Build Walks Into .NET obj/Debug Directory
+
+**What happened:** After adding .NET backend files, `npx nx build` failed because the Angular/TypeScript compiler walked into `src/ProjectName/obj/Debug/` and tried to compile .NET-generated files as TypeScript.
+
+**Root cause:** The Angular `tsconfig.json` or `tsconfig.app.json` didn't exclude .NET build output directories (`obj/`, `bin/`).
+
+**Mitigation:** When creating Angular projects in a mixed .NET+Angular repo, always ensure the Angular tsconfig excludes .NET output directories.
+
+**Fix:** Add to Angular `tsconfig.json` or `tsconfig.app.json`:
+```json
+"exclude": ["node_modules", "**/obj/**", "**/bin/**"]
+```
+
+**Checklist:**
+- [ ] Angular tsconfig excludes `obj/` and `bin/` directories
+- [ ] `npx nx build` passes without .NET file compilation errors
+
 ## Mitigation Checklist (Implementation Agents — Fenster, Dallas)
 
 Before finalizing any implementation:
@@ -93,3 +110,4 @@ Before finalizing any implementation:
 10. [ ] No unnecessary NuGet/npm packages were added (check transitive dependencies first)
 11. [ ] `dotnet build` passes after all changes
 12. [ ] No parallel EF Core queries on the same DbContext instance
+13. [ ] Angular tsconfig excludes `obj/` and `bin/` directories (mixed .NET+Angular repos)
