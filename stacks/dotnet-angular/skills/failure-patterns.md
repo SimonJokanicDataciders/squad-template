@@ -55,6 +55,35 @@ Before finalizing any code analysis output:
 5. [ ] Every line number referenced matches the actual file content
 6. [ ] No method was "summarized" without reading its full implementation
 
+### 11. Concurrent EF Core Queries on Same DbContext
+
+**What happened:** Backend agent used `Task.WhenAll()` to run multiple EF queries in parallel, but all queries shared the same scoped `ApplicationDbContext`. EF Core's `DbContext` is NOT thread-safe — this caused `InvalidOperationException` at runtime (500 errors on the endpoint).
+
+**Root cause:** The agent tried to optimize by parallelizing queries, but didn't know that DbContext is scoped per-request and must not be shared across threads.
+
+**Mitigation:** NEVER run parallel EF Core queries on the same DbContext instance. Either:
+- Run queries sequentially (simplest, correct for most cases)
+- Inject `IDbContextFactory<T>` and create a separate context per parallel task
+
+**WRONG:**
+```csharp
+var logins = _context.LoginHistory.Where(...).ToListAsync();
+var actions = _context.RecentActions.Where(...).ToListAsync();
+await Task.WhenAll(logins, actions); // CRASH — same DbContext
+```
+
+**CORRECT:**
+```csharp
+var logins = await _context.LoginHistory.Where(...).ToListAsync();
+var actions = await _context.RecentActions.Where(...).ToListAsync();
+// Sequential — safe, simple, correct
+```
+
+**Checklist:**
+- [ ] No `Task.WhenAll` with multiple EF queries on the same context
+- [ ] No `.AsParallel()` on IQueryable
+- [ ] If parallelism is truly needed, use `IDbContextFactory<T>`
+
 ## Mitigation Checklist (Implementation Agents — Fenster, Dallas)
 
 Before finalizing any implementation:
@@ -63,3 +92,4 @@ Before finalizing any implementation:
 9. [ ] No files in `Migrations/` or `*ModelSnapshot.cs` were manually edited
 10. [ ] No unnecessary NuGet/npm packages were added (check transitive dependencies first)
 11. [ ] `dotnet build` passes after all changes
+12. [ ] No parallel EF Core queries on the same DbContext instance

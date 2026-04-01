@@ -1,6 +1,6 @@
 # Squad Onboard — Automated Codebase Learning & Project Bootstrap
 
-**Load when:** "learn", "onboard", "analyze codebase", "discover", "scan project", OR when no `.copilot/skills/role-*-core.md` files exist and user gives first work request.
+**Load when:** "learn", "onboard", "analyze codebase", "discover", "scan project", OR when no `.copilot/skills/role-*-core.md` or `.copilot/skills/*-role-*-core.md` files exist and user gives first work request.
 
 ---
 
@@ -12,8 +12,8 @@ On session start, after bootstrap reads, check THREE things:
 # 1. Does a project map exist?
 ls .squad/project-map.md 2>/dev/null
 
-# 2. Do skill bundles exist?
-ls .copilot/skills/role-*-core.md 2>/dev/null
+# 2. Do skill bundles exist? (check both standard and prefixed naming)
+ls .copilot/skills/role-*-core.md .copilot/skills/*-role-*-core.md 2>/dev/null
 
 # 3. Does source code exist?
 find . -maxdepth 3 -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.cs" -o -name "*.go" -o -name "*.rs" -o -name "*.java" -o -name "*.rb" -o -name "*.php" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' 2>/dev/null | head -5
@@ -511,7 +511,7 @@ This means:
 
 When the user says "re-learn", "refresh skills", "re-analyze", or "update knowledge":
 
-1. Delete existing skill bundles: `rm .copilot/skills/role-*-core.md .copilot/skills/role-architect.md .copilot/skills/sdlc-context-core.md 2>/dev/null`
+1. Delete existing skill bundles: `rm .copilot/skills/role-*-core.md .copilot/skills/*-role-*-core.md .copilot/skills/role-architect.md .copilot/skills/*-role-architect.md .copilot/skills/sdlc-context-core.md .copilot/skills/*-sdlc-context-core.md 2>/dev/null`
 2. Check if source code exists now
 3. If yes → run Learn Mode (Phase A)
 4. If no → run Bootstrap Mode (Phase B) again

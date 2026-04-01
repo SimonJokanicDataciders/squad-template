@@ -86,3 +86,12 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Anti-pattern:** Weakening linter/formatter config to fix errors.
 **Why:** When an agent modifies ESLint, Prettier, or .editorconfig to suppress warnings, it degrades code quality for the entire team. Always fix the code, not the rules.
+
+**Anti-pattern:** Waiting for the user to ask "check on agent X" when an agent session expires.
+**Why:** The coordinator should proactively check status.md timestamps after receiving agent completion notifications or when >10 minutes have passed since an agent was spawned. If status.md says "working" but the timestamp is >10 minutes old and output files exist on disk, treat the agent as completed with an expired session. Don't wait for the user to notice.
+
+**Anti-pattern:** Spending >10 minutes troubleshooting environment issues (SDK, Docker, restore).
+**Why:** In the CAP.Template stress test, ~60% of a 4-hour session was environment troubleshooting. If a restore hangs, SDK is missing, or Docker won't start — report the issue to the user after 10 minutes instead of endlessly retrying. The user can fix their environment faster than the coordinator can guess.
+
+**Anti-pattern:** Using AppHost/Aspire when direct service startup would be faster.
+**Why:** AppHost restore can hang for 30+ minutes on complex solutions. When the goal is "run the app", starting services directly (dotnet run + npm start + docker compose up db) is faster and more reliable than debugging Aspire orchestration issues.

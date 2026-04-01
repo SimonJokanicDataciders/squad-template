@@ -58,6 +58,28 @@ When `Read (Checking agent X)` fails, this is NORMAL — agent sessions expire q
 ### 8. ALWAYS PASS MODEL EXPLICITLY IN SPAWNS
 When calling the `task` tool to spawn an agent, ALWAYS include the `model` parameter with the resolved model name. Never omit it and hope the platform picks the right one. If the user's task specification says "use claude-opus-4-6", pass `model: "claude-opus-4-6"` in EVERY spawn — no exceptions.
 
+### 9. ENVIRONMENT TIME BUDGET — 10 MINUTES MAX
+If any environment setup task (SDK install, dotnet restore, npm install, Docker start) takes more than 10 minutes, **STOP retrying and report to the user.** The user can fix their environment faster than you can guess. Never spend >10 minutes on restore loops, SDK mismatches, or Docker troubleshooting.
+
+Example:
+```
+⚠️ Environment issue: dotnet restore has been running for 10+ minutes without progress.
+Possible causes: network issue, missing SDK, locked NuGet cache.
+Action needed: check your .NET SDK version matches global.json, or run `dotnet restore` manually.
+```
+
+### 10. PROACTIVE AGENT STATUS CHECKS
+Don't wait for the user to ask "check on agent X." After spawning background agents:
+- If >10 minutes pass with no completion notification, check `.squad/agents/{name}/status.md`
+- If status says `working` but output files exist on disk → treat as completed, session expired
+- If status says `working` and NO output exists → the agent may be stuck, consider re-spawning
+
+### 11. DIRECT-RUN FALLBACK
+When AppHost, Aspire, or complex orchestrators hang during startup:
+1. Don't spend >10 minutes debugging the orchestrator
+2. Fall back to running services directly: `docker compose up -d db` + `dotnet run --project Web` + `npm start`
+3. Report: "AppHost startup is hanging. Started services directly instead."
+
 ---
 
 ## On-Demand Modules
@@ -76,9 +98,10 @@ Load these by reading the file ONLY when the task requires it:
 | Session | "session recovery", "client compatibility" | `.copilot/skills/coordinator/squad-session.md` |
 | Artifacts | "artifact format", "raw output", "constraint budget", "assembly" | `.copilot/skills/coordinator/squad-artifacts.md` |
 | Worktrees | "worktree lifecycle", "create worktree", "worktree cleanup", "node_modules link" | `.copilot/skills/coordinator/squad-worktrees.md` |
+| **Pre-Flight** | ALWAYS — run in bootstrap turn before any work | `.copilot/skills/coordinator/squad-preflight.md` |
 | Contexts | "mode", "context", "development", "research", "review" | `.copilot/skills/coordinator/squad-contexts.md` |
 | Handoffs | "handoff", "multi-agent", "orchestrate", "chain" | `.copilot/skills/coordinator/squad-handoffs.md` |
-| **Onboard** | "learn", "onboard", "analyze codebase", "discover", "scan project", OR when no `role-*-core.md` skill bundles exist | `.copilot/skills/coordinator/squad-onboard.md` |
+| **Onboard** | "learn", "onboard", "analyze codebase", "discover", "scan project", OR when no `role-*-core.md` / `*-role-*-core.md` skill bundles exist | `.copilot/skills/coordinator/squad-onboard.md` |
 
 ---
 
@@ -87,8 +110,8 @@ Load these by reading the file ONLY when the task requires it:
 **After the bootstrap turn, BEFORE routing any work request**, check TWO things:
 
 ```bash
-# 1. Do skill bundles exist?
-ls .copilot/skills/role-*-core.md 2>/dev/null
+# 1. Do skill bundles exist? (check both standard and prefixed naming)
+ls .copilot/skills/role-*-core.md .copilot/skills/*-role-*-core.md 2>/dev/null
 
 # 2. Does source code exist? (only check if no skill bundles)
 find . -maxdepth 3 -type f \( -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.cs" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' 2>/dev/null | head -5
