@@ -58,6 +58,12 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 **Pattern:** Sub-agents work well for phased implementation — don't over-formalize.
 **Context:** Dallas spawned 4 sub-agents for different implementation phases and it worked. The `## Sub-Agent Capability` section in charters is sufficient. Don't add more sub-agent orchestration structure — it increases coordinator prompt size without clear benefit.
 
+**Pattern:** Research before code — search for existing solutions first.
+**Context:** Before implementing anything new, agents should search the existing codebase for similar patterns, check package registries (npm/NuGet/PyPI) for existing solutions, and adopt proven approaches over inventing new ones. This prevents reinventing the wheel and ensures consistency.
+
+**Pattern:** Protect config files — fix code, not linters.
+**Context:** When agents encounter lint/format errors, they should fix the code to comply with the rules, NOT weaken the linter config. Agents must never modify .eslintrc, .editorconfig, prettier config, or similar files to make errors go away.
+
 ## Anti-Patterns
 
 **Anti-pattern:** Trusting Squad sync output as authoritative code review.
@@ -77,3 +83,6 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Anti-pattern:** Omitting the model parameter when spawning agents.
 **Why:** If model is omitted, the platform picks its own default (often gpt-4.1 free tier). Always pass the model explicitly — even for claude-sonnet-4.6. The user expects the model they configured, not a silent fallback.
+
+**Anti-pattern:** Weakening linter/formatter config to fix errors.
+**Why:** When an agent modifies ESLint, Prettier, or .editorconfig to suppress warnings, it degrades code quality for the entire team. Always fix the code, not the rules.

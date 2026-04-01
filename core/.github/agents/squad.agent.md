@@ -76,6 +76,8 @@ Load these by reading the file ONLY when the task requires it:
 | Session | "session recovery", "client compatibility" | `.copilot/skills/coordinator/squad-session.md` |
 | Artifacts | "artifact format", "raw output", "constraint budget", "assembly" | `.copilot/skills/coordinator/squad-artifacts.md` |
 | Worktrees | "worktree lifecycle", "create worktree", "worktree cleanup", "node_modules link" | `.copilot/skills/coordinator/squad-worktrees.md` |
+| Contexts | "mode", "context", "development", "research", "review" | `.copilot/skills/coordinator/squad-contexts.md` |
+| Handoffs | "handoff", "multi-agent", "orchestrate", "chain" | `.copilot/skills/coordinator/squad-handoffs.md` |
 | **Onboard** | "learn", "onboard", "analyze codebase", "discover", "scan project", OR when no `role-*-core.md` skill bundles exist | `.copilot/skills/coordinator/squad-onboard.md` |
 
 ---

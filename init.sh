@@ -485,6 +485,29 @@ if [[ -n "$STACK" ]]; then
   [[ -f "$STACK_DIR/routing.md" ]] && cp "$STACK_DIR/routing.md" "$TARGET/.squad/"
   [[ -f "$STACK_DIR/ceremonies.md" ]] && cp "$STACK_DIR/ceremonies.md" "$TARGET/.squad/"
 
+  # Copy common rules (universal coding standards)
+  if [[ -d "$SCRIPT_DIR/stacks/rules/common" ]]; then
+    mkdir -p "$TARGET/.github/instructions"
+    cp "$SCRIPT_DIR/stacks/rules/common/"*.md "$TARGET/.github/instructions/" 2>/dev/null || true
+    echo "     Copied common rules (coding-style, security, testing, git-workflow)"
+  fi
+
+  # Copy language-specific rules based on detected tech stack
+  if [[ -n "$DETECTED_TECHS" ]]; then
+    for tech in $DETECTED_TECHS; do
+      case "$tech" in
+        dotnet) lang_dir="csharp" ;;
+        typescript|angular|react|vue|nextjs|node) lang_dir="typescript" ;;
+        python|fastapi) lang_dir="python" ;;
+        *) lang_dir="" ;;
+      esac
+      if [[ -n "$lang_dir" && -d "$SCRIPT_DIR/stacks/rules/$lang_dir" ]]; then
+        cp "$SCRIPT_DIR/stacks/rules/$lang_dir/"*.md "$TARGET/.github/instructions/" 2>/dev/null || true
+        echo "     Copied $lang_dir rules"
+      fi
+    done
+  fi
+
   # Copy instructions
   if [[ -d "$STACK_DIR/instructions" ]]; then
     mkdir -p "$TARGET/.github/instructions"
@@ -585,6 +608,29 @@ CAST_TEAM_EOF
 else
   echo "4/6  No stack preset — using generic agent charters."
   echo "     Customize charters in .squad/agents/*/charter.md for your tech stack."
+
+  # Still copy common rules and detected language rules even without a stack preset
+  if [[ -d "$SCRIPT_DIR/stacks/rules/common" ]]; then
+    mkdir -p "$TARGET/.github/instructions"
+    cp "$SCRIPT_DIR/stacks/rules/common/"*.md "$TARGET/.github/instructions/" 2>/dev/null || true
+    echo "     Copied common rules (coding-style, security, testing, git-workflow)"
+  fi
+
+  if [[ -n "$DETECTED_TECHS" ]]; then
+    for tech in $DETECTED_TECHS; do
+      case "$tech" in
+        dotnet) lang_dir="csharp" ;;
+        typescript|angular|react|vue|nextjs|node) lang_dir="typescript" ;;
+        python|fastapi) lang_dir="python" ;;
+        *) lang_dir="" ;;
+      esac
+      if [[ -n "$lang_dir" && -d "$SCRIPT_DIR/stacks/rules/$lang_dir" ]]; then
+        mkdir -p "$TARGET/.github/instructions"
+        cp "$SCRIPT_DIR/stacks/rules/$lang_dir/"*.md "$TARGET/.github/instructions/" 2>/dev/null || true
+        echo "     Copied $lang_dir rules"
+      fi
+    done
+  fi
 fi
 
 # Step 5: Generate project map (scan actual file structure)
