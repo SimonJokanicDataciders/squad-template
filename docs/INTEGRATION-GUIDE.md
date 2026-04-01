@@ -76,7 +76,13 @@ cd ~/path/to/project
 copilot --agent squad
 ```
 
-That's it. Squad is ready.
+To skip all approval prompts (file creation, terminal commands, installs), use yolo mode:
+
+```bash
+copilot --agent squad --yolo
+```
+
+> **When to use `--yolo`:** On test projects, greenfield apps, or when you trust Squad to run autonomously. Don't use it on production codebases without reviewing the output first — you can always `git diff` after the run.
 
 ---
 

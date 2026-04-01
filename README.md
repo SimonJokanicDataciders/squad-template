@@ -2,6 +2,8 @@
 
 Your AI development team, ready in 60 seconds.
 
+> **Note:** This is not the official [Squad](https://github.com/bradygaster/squad) setup. This is an optimized template with custom coordinator, per-agent model routing, auto-proceed pipeline, self-validation, and language-specific rules.
+
 This template replaces the default `squad init` (127 generic files) with an optimized engine that gives your agents real domain knowledge, auto-proceeds through the pipeline, and routes the right model to the right agent.
 
 > **Model Requirement:** Multi-agent model routing (opus for architect, sonnet for code, haiku for docs) **only works with GPT-5.1 HIGH** as the Copilot CLI model. With any other model, all agents default to the CLI's single model.
@@ -13,7 +15,7 @@ This template replaces the default `squad init` (127 generic files) with an opti
 ### 1. Clone this repo
 
 ```bash
-git clone <your-repo-url> ~/squad-template
+git clone https://github.com/SimonJokanicDataciders/squad-template.git ~/squad-template
 ```
 
 ### 2. Bootstrap your project
@@ -39,6 +41,12 @@ copilot --agent squad
 ```
 
 That's it. Your project now has 6 AI agents ready to work.
+
+For fully autonomous mode (no approval prompts), add `--yolo`:
+
+```bash
+copilot --agent squad --yolo
+```
 
 ---
 
@@ -130,7 +138,7 @@ squad-template/
 │   └── seeds/               #   15 lightweight tech seeds (React, FastAPI, etc.)
 │
 ├── shared/                  # Cross-project failure patterns
-├── docs/                    # Architecture docs, customization guide
+├── docs/                    # Integration guide, premium comparison, architecture
 └── init.sh                  # Bootstrap / upgrade script
 ```
 
@@ -170,6 +178,15 @@ cp -r ~/squad-template/stacks/_template ~/squad-template/stacks/python-fastapi
 ```
 
 The `_template/` directory contains ready-to-customize files with `<!-- Replace -->` markers showing exactly what to fill in. See `stacks/_template/README.md` for a full checklist with time estimates.
+
+---
+
+---
+
+## Docs
+
+- **[Integration Guide](docs/INTEGRATION-GUIDE.md)** — Step-by-step setup, prompt examples, troubleshooting
+- **[Premium Request Comparison](docs/PREMIUM-REQUEST-COMPARISON.md)** — Cost analysis: ~30 requests standard vs 1-3 with Squad
 
 ---
 
