@@ -64,6 +64,18 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 **Pattern:** Protect config files — fix code, not linters.
 **Context:** When agents encounter lint/format errors, they should fix the code to comply with the rules, NOT weaken the linter config. Agents must never modify .eslintrc, .editorconfig, prettier config, or similar files to make errors go away.
 
+**Pattern:** Escalate model tier on first agent failure before retrying.
+**Context:** In stress tests, standard-tier agents (sonnet) retry the same broken approach because they lack reasoning depth for subtle bugs (nullable API data, path resolution, datetime type mismatches). Escalating to premium (opus) on first failure finds root causes 2-3x faster. One opus retry costs less than 3 failing sonnet retries. Does NOT apply to Scribe tasks or environment issues.
+
+**Pattern:** Frontend agents must run a real app startup test as self-validation.
+**Context:** Import checks (`python -c "import app"`) pass even when the app crashes at runtime (wrong page paths, Plotly type errors). Frontend agents should start the app headlessly, hit the health endpoint, and verify HTTP 200 before marking work as done.
+
+**Pattern:** Backend agents must test fetchers against live API data when writing data ingestion code.
+**Context:** Unit tests with mocked API responses pass, but live APIs return nullable fields, different schemas, or rate limits that break strict Pydantic models. After implementing fetchers, run one real fetch cycle to catch schema mismatches early.
+
+**Pattern:** Use the correct Python binary when version requirements differ from system default.
+**Context:** System `python3` may point to 3.9 while the project requires 3.12. Pre-flight should detect the mismatch and use `python3.12 -m venv .venv` instead of failing repeatedly with the wrong interpreter.
+
 ## Anti-Patterns
 
 **Anti-pattern:** Trusting Squad sync output as authoritative code review.
