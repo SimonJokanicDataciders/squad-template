@@ -637,18 +637,26 @@ When the user asks for a full-stack feature (backend + frontend + tests + docs):
 
 When an agent fails (build error, test failure, runtime error):
 
-**First failure:**
-1. The SAME agent retries with a different approach
-2. Agent must read the error output carefully and fix the root cause
-3. Agent runs build/test again to verify
+**First failure — Model Escalation:**
+1. If the agent was running on Standard tier (`claude-sonnet-4.6`) or Fast tier (`claude-haiku-4.5`), **escalate the model** before retrying:
+   - Standard (`claude-sonnet-4.6`) → retry with `claude-opus-4.6` (Premium)
+   - Fast (`claude-haiku-4.5`) → retry with `claude-sonnet-4.6` (Standard)
+   - Premium (`claude-opus-4.6`) → retry with same model, different approach (already at top tier)
+2. The SAME agent retries with the escalated model AND a different approach
+3. Agent must read the error output carefully and fix the root cause
+4. Agent runs build/test again to verify
+5. Announce the escalation: `🔄 {Name} retry — escalating to {model} for deeper analysis`
 
-**Second failure (same agent, same issue):**
+**Why escalate on first failure:** In stress tests, standard-tier agents retry the same broken approach because they lack the reasoning depth to diagnose subtle issues (nullable API responses, path resolution, datetime type mismatches). Premium models find root causes 2-3x faster on debugging tasks. The cost of one opus retry is far less than 3 sonnet retries that all fail.
+
+**Second failure (escalated model, same issue):**
 1. **Do NOT retry with the same agent.** Spawn a DIFFERENT agent to collaborate:
    - Build failure → spawn Lead/Architect to review the approach + original agent to pair-fix
    - Test failure → spawn QA/Tester + original implementer to investigate together
    - Frontend failure → spawn Frontend + Backend to align on contract
 2. The collaborating agent reads the error output AND the failing agent's changes
 3. Together they produce a fix
+4. The collaborating agent ALSO runs at the escalated model tier
 
 **Third failure (after collaboration):**
 1. Stop and report to user with full context:
@@ -656,6 +664,11 @@ When an agent fails (build error, test failure, runtime error):
    - What error persists
    - What the agents think the root cause is
    - Suggested next steps for the human
+
+**Model escalation does NOT apply to:**
+- Scribe tasks (docs/logs) — failures here are rare and not worth premium cost
+- Environment issues (SDK missing, Docker down) — model escalation won't fix missing tools
+- Tasks where the user explicitly set a model — respect user's choice
 
 **For long/complex tasks:** Proactively split work across agents. If a task touches 5+ files across multiple layers, don't give it all to one agent. Split by domain expertise.
 

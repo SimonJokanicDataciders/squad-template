@@ -32,7 +32,16 @@ fi
 
 # 3. Python (if Python project)
 if [ -f pyproject.toml ] || [ -f requirements.txt ]; then
-  echo "PYTHON:$(python3 --version 2>/dev/null || echo MISSING)"
+  echo "PYTHON_DEFAULT:$(python3 --version 2>/dev/null || echo MISSING)"
+  # Check specific versions that may be installed alongside default
+  for v in python3.13 python3.12 python3.11 python3.10; do
+    ver=$($v --version 2>/dev/null) && echo "PYTHON_AVAILABLE:$ver"
+  done
+  # Check if pyproject.toml specifies a minimum version
+  if [ -f pyproject.toml ]; then
+    req=$(grep -o 'requires-python.*' pyproject.toml 2>/dev/null | head -1)
+    [ -n "$req" ] && echo "PYTHON_REQUIRED:$req"
+  fi
 fi
 
 # 4. Java (needed for OpenAPI generators)
@@ -48,7 +57,7 @@ if ls *.sln *.csproj 2>/dev/null | head -1 >/dev/null 2>&1; then
 fi
 
 # 7. Key ports free
-for port in 5000 5043 4200 63564 1433 5432; do
+for port in 5000 5043 4200 8501 8000 3000 63564 1433 5432; do
   if lsof -nP -iTCP:$port -sTCP:LISTEN >/dev/null 2>&1; then
     echo "PORT_IN_USE:$port"
   fi
@@ -64,6 +73,7 @@ done
 | .NET SDK version doesn't match global.json | Build will fail | Report: "This project requires .NET SDK {version} (from global.json). Install it or set DOTNET_ROOT." |
 | Node.js missing on a Node project | Nothing will build | Report: "Install Node.js to continue." |
 | Docker not running on a project with docker-compose | Database won't start | Report: "Start Docker Desktop — the project needs containers for the database." |
+| Python version mismatch (`python3` is 3.9 but `requires-python >= 3.12`) | Packages won't install, type hints may fail | Check if the required version is available as `python3.12` (or similar). If yes, use that binary for the venv. If no, report: "This project requires Python {version}. Install via `brew install python@3.12` or `pyenv install 3.12`." |
 
 ### Warning (report but continue)
 
@@ -86,10 +96,13 @@ done
 📋 Pre-flight checks:
   ✅ .NET SDK 9.0.203 matches global.json
   ✅ Node.js v22.0.0, npm 10.0.0
+  ✅ Python 3.12.4 (matches requires-python >= 3.12)
   ✅ Docker running
   ⚠️  Java not installed (OpenAPI generation will be skipped)
   ⚠️  node_modules missing — running npm install
+  ⚠️  Default python3 is 3.9, but python3.12 found — using python3.12 for venv
   ❌ Port 5043 already in use (PID 12345)
+  ❌ Python 3.12 required but only 3.9 available — install Python 3.12
 ```
 
 ## When to STOP and Ask the User

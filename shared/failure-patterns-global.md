@@ -115,6 +115,52 @@ to the squad-template repo so all future projects benefit.
 
 **Mitigation:** Pre-flight check: `grep -r "UseSqlServer\|UseNpgsql\|UseSqlite" src/` to detect the configured provider.
 
+### 14. Streamlit Page Path Resolution (Relative vs Absolute)
+
+**What happened:** Frontend agent registered Streamlit pages with relative paths (`st.Page("pages/weather.py")`), but Streamlit resolves paths relative to the current working directory, not relative to `app.py`. When the app is launched from the project root, the pages can't be found.
+
+**Correction:** Always resolve page paths relative to `app.py` using `Path(__file__).parent / "pages" / "weather.py"`.
+
+**Mitigation:**
+- **WRONG:** `st.Page("pages/weather.py")` or `st.Page("src/pipeline/dashboard/pages/weather.py")`
+- **CORRECT:** `st.Page(Path(__file__).parent / "pages" / "weather.py")`
+- This applies to ALL multi-page Streamlit apps, not just specific frameworks
+
+### 15. Plotly Datetime Annotation Type Mismatch
+
+**What happened:** Frontend agent used `fig.add_vline(x=forecast_start, annotation_text="Forecast")` where `forecast_start` was a date string. Plotly's internal `shapeannotation.py` tried `sum()` on mixed int+str types, causing `TypeError: unsupported operand type(s) for +: 'int' and 'str'`.
+
+**Correction:** Convert date values to `datetime` objects before passing to Plotly annotation functions. Or use `fig.add_shape()` + `fig.add_annotation()` instead of `add_vline()` with annotations.
+
+**Mitigation:**
+- **WRONG:** `fig.add_vline(x="2026-04-01", annotation_text="...")`
+- **CORRECT:** `fig.add_vline(x=pd.Timestamp("2026-04-01"), annotation_text="...")` or use `fig.add_shape(type="line", ...)` separately
+- This is a known Plotly issue with datetime axes + annotation parameters
+
+### 16. API Returning Nullable Fields Breaking Strict Schemas
+
+**What happened:** Backend agent defined a Pydantic model with `precipitation: float` (non-nullable), but the live API (Open-Meteo) returned `null` for precipitation on some records. The fetcher crashed on real production data despite passing unit tests with mock data.
+
+**Correction:** When consuming external APIs, always assume any numeric field CAN be null unless the API documentation explicitly guarantees non-null. Use `Optional[float]` with a default, or coerce nulls to a sensible default (e.g., `0.0` for precipitation).
+
+**Mitigation:**
+- **WRONG:** `precipitation: float` with external API data
+- **CORRECT:** `precipitation: float = Field(default=0.0)` with a validator that coerces `None → 0.0`
+- Always test fetchers against LIVE API data, not just mocked responses, before marking backend as complete
+- This applies to any strict schema (Pydantic, Zod, JSON Schema) consuming external data
+
+### 17. Python Version Mismatch Not Caught by Pre-Flight
+
+**What happened:** Project's `pyproject.toml` specified `requires-python = ">=3.12"`, but the system's default `python3` was Python 3.9. The coordinator spent 10+ minutes diagnosing why `pip install -e .` failed before discovering `python3.12` was available as a separate binary.
+
+**Correction:** Pre-flight must check the Python version against `pyproject.toml`'s `requires-python` field. If the default `python3` doesn't match, scan for specific version binaries (`python3.12`, `python3.11`, etc.).
+
+**Mitigation:**
+- Check `requires-python` in `pyproject.toml` during pre-flight
+- If mismatch: scan for `python3.{required_version}` binary
+- If found: use that binary for the venv (`python3.12 -m venv .venv`)
+- If not found: report immediately instead of retrying with wrong version
+
 ---
 
 <!-- Add new patterns below. Use sequential numbering. -->
