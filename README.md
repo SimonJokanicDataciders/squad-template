@@ -4,34 +4,40 @@ Your AI development team, ready in 60 seconds.
 
 > **Note:** This is not the official [Squad](https://github.com/bradygaster/squad) setup. This is an optimized template with custom coordinator, per-agent model routing, auto-proceed pipeline, self-validation, and language-specific rules.
 
-This template replaces the default `squad init` (127 generic files) with an optimized engine that gives your agents real domain knowledge, auto-proceeds through the pipeline, and routes the right model to the right agent.
+---
 
-> **Model Requirement:** Multi-agent model routing (opus for architect, sonnet for code, haiku for docs) **only works with GPT-5.1 HIGH** as the Copilot CLI model. With any other model, all agents default to the CLI's single model.
+## Prerequisites
+
+1. **GitHub Copilot** with agent mode enabled
+2. **CLI model: GPT-5.1 HIGH** — set this in your Copilot CLI settings. Other models work but all agents will use the same model instead of routing per agent.
+3. **Git repository** — your project must be a git repo (`git init`). Squad stores configuration in git-tracked files.
 
 ---
 
 ## Getting Started
 
-### 1. Clone this repo
+### 1. Clone this repo (once)
 
 ```bash
 git clone https://github.com/SimonJokanicDataciders/squad-template.git ~/squad-template
 ```
 
-### 2. Bootstrap your project
-
-Pick the method that fits your situation:
+### 2. Install Squad into your project
 
 ```bash
-# Auto-detect your tech stack and apply matching preset/seeds automatically
+# Auto-detect your tech stack (recommended)
 ~/squad-template/init.sh ~/my-project --auto
 
-# Or specify a stack preset explicitly
+# Or specify a stack preset if you know the name
 ~/squad-template/init.sh ~/my-project --stack dotnet-angular
 
-# Or just the core engine (no stack-specific conventions)
-~/squad-template/init.sh ~/my-project
+# See available presets and seeds
+~/squad-template/init.sh --help
 ```
+
+> **`--auto` vs `--stack`:** Use `--auto` if you're not sure — it scans your config files (package.json, *.csproj, pyproject.toml) and picks the best match. Use `--stack` only if you know exactly which preset you want.
+
+Works on new and existing projects — Squad adds new directories (`.squad/`, `.github/agents/`, `.copilot/`) alongside your code without touching existing files.
 
 ### 3. Start Squad
 
@@ -40,43 +46,42 @@ cd ~/my-project
 copilot --agent squad
 ```
 
-That's it. Your project now has 6 AI agents ready to work.
-
-For fully autonomous mode (no approval prompts), add `--yolo`:
+For fully autonomous mode (no approval prompts):
 
 ```bash
 copilot --agent squad --yolo
 ```
 
----
+> **When to use `--yolo`:** On test projects, greenfield apps, or when you trust Squad to run autonomously. Don't use it on production codebases without reviewing the output first — you can always `git diff` after the run.
 
-## Works on Any Project
+### 4. Give it a task
 
-`init.sh` adds Squad files alongside your existing code — it never modifies your source files.
+Squad works best when your prompt is specific about **what** you want but leaves the **how** to the agents.
 
-```bash
-# New project
-mkdir ~/my-app && cd ~/my-app && git init
-~/squad-template/init.sh ~/my-app --auto
-
-# Existing project with thousands of files
-~/squad-template/init.sh ~/work/existing-api --auto
-
-# Already have Squad? Update without losing your customizations
-~/squad-template/init.sh ~/my-project --upgrade
+```
+[What to build/fix/analyze]
+[Key requirements — entities, endpoints, pages, constraints]
+[Which patterns to follow — reference existing code if possible]
+[What the output should include — tests, docs, migrations]
 ```
 
----
+Example:
+```
+Add a new Inventory feature.
+Entity with Id, ProductId, Quantity, Warehouse, LastUpdated.
+CRUD endpoints at /api/inventory, Angular list + form page.
+Follow the WeatherForecasts pattern in src/Domain/WeatherForecasts/.
+Include unit tests, integration tests, and EF Core migration.
+```
 
-## CLI Reference
+| Do | Don't |
+|---|---|
+| Name your entities, fields, and endpoints | Say "build something cool" |
+| Reference existing patterns in the codebase | Assume agents know your conventions |
+| List all pieces you want (API + UI + tests) | Ask for one piece at a time |
+| Mention constraints (auth, specific DB, etc.) | Leave critical requirements implicit |
 
-| Command | What it does |
-|---------|-------------|
-| `init.sh <dir>` | Core engine only (generic agents, no stack preset) |
-| `init.sh <dir> --auto` | Auto-detect tech stack, apply matching preset or seeds |
-| `init.sh <dir> --stack <name>` | Apply a specific stack preset (e.g., `dotnet-angular`) |
-| `init.sh <dir> --upgrade` | Update coordinator, skills, workflows — preserves team, decisions, history |
-| `init.sh --help` | Show all options, available presets, and seeds |
+> **Tip:** You don't need to specify which agent handles what — the coordinator routes automatically.
 
 ---
 
@@ -94,8 +99,6 @@ mkdir ~/my-app && cd ~/my-app && git init
 | Ralph | Ops, security, triage | `claude-haiku-4.5` | Fast (0.33x) |
 
 ### Auto-Proceed Pipeline
-
-The coordinator runs the full pipeline autonomously:
 
 ```
 design → plan → implement → test → document → done
@@ -118,29 +121,51 @@ When you use `--auto`, the script detects your tech stack from config files:
 | `vite.config.*` | Vite |
 | `tsconfig.json` | TypeScript |
 
-It then matches against available presets and 15 built-in seeds (React, Express, FastAPI, .NET, Angular, Prisma, xUnit, Vitest, and more).
+Matches against available presets and 15 built-in seeds (React, Express, FastAPI, .NET, Angular, Prisma, xUnit, Vitest, and more).
 
 ---
 
-## Project Structure
+## CLI Reference
 
+| Command | What it does |
+|---------|-------------|
+| `init.sh <dir> --auto` | Auto-detect tech stack, apply matching preset or seeds |
+| `init.sh <dir> --stack <name>` | Apply a specific stack preset (e.g., `dotnet-angular`) |
+| `init.sh <dir> --upgrade` | Update coordinator, skills, workflows — preserves team, decisions, history |
+| `init.sh <dir>` | Core engine only (generic agents, no stack preset) |
+| `init.sh --help` | Show all options, available presets, and seeds |
+
+---
+
+## Updating
+
+```bash
+cd ~/squad-template && git pull
+~/squad-template/init.sh ~/my-project --upgrade
 ```
-squad-template/
-├── core/                    # Universal engine (copied to every project)
-│   ├── .github/agents/      #   Coordinator prompt (~1200 lines, on-demand modules)
-│   ├── .copilot/skills/     #   11 coordinator skill modules
-│   ├── .squad/              #   Wisdom, templates, casting, config
-│   └── .github/workflows/   #   GitHub Actions for triage/labels
-│
-├── stacks/                  # Stack-specific presets
-│   ├── dotnet-angular/      #   .NET 10 + Angular 21 (22 skill bundles, 6 charters)
-│   ├── _template/           #   Ready-to-customize template for new stacks
-│   └── seeds/               #   15 lightweight tech seeds (React, FastAPI, etc.)
-│
-├── shared/                  # Cross-project failure patterns
-├── docs/                    # Integration guide, premium comparison, architecture
-└── init.sh                  # Bootstrap / upgrade script
-```
+
+**Updated:** Coordinator prompt, skills, workflows, seeds, failure patterns
+
+**Preserved:** team.md, agent charters, histories, config.json, routing.md, decisions.md
+
+---
+
+## Troubleshooting
+
+**"Custom agent 'squad' not found"**
+→ You're in the wrong directory. `cd` into your project where `.github/agents/squad.agent.md` exists.
+
+**All agents use the same model (e.g., gpt-4.1)**
+→ Switch CLI model to **GPT-5.1 HIGH**. Only this model routes models per agent.
+
+**"Read (Checking agent X) → Failed"**
+→ Normal — agent sessions expire quickly. Squad checks files on disk automatically. No action needed.
+
+**Agent asks "Would you like to proceed?"**
+→ Run `init.sh --upgrade` to get the latest coordinator with auto-proceed.
+
+**Build fails with wrong commands (e.g., `dotnet build` on a React project)**
+→ Run `init.sh --upgrade` — newer version auto-detects project type.
 
 ---
 
@@ -152,7 +177,6 @@ squad-template/
 | **Agent charters** | "Collaborate with team" | Embedded conventions, guardrails, model preferences |
 | **Skills** | 28 generic | Stack-specific patterns + failure prevention |
 | **Routing** | Placeholders | Precise phase-to-agent mapping |
-| **Wisdom** | Empty | Pre-seeded with battle-tested patterns |
 | **Coordinator** | 21,600 lines (loads everything) | ~1200 lines (tiered: core always + on-demand) |
 | **Auto-proceed** | Asks "ready?" between phases | Autonomous pipeline, banned confirmation phrases |
 | **Model routing** | Single model for all | Per-agent (opus/sonnet/haiku by role) |
@@ -177,18 +201,14 @@ cp -r ~/squad-template/stacks/_template ~/squad-template/stacks/python-fastapi
 ~/squad-template/init.sh ~/my-project --stack python-fastapi
 ```
 
-The `_template/` directory contains ready-to-customize files with `<!-- Replace -->` markers showing exactly what to fill in. See `stacks/_template/README.md` for a full checklist with time estimates.
-
----
+See `stacks/_template/README.md` for a full checklist with time estimates.
 
 ---
 
 ## Docs
 
-- **[Integration Guide](docs/INTEGRATION-GUIDE.md)** — Step-by-step setup, prompt examples, troubleshooting
+- **[Integration Guide](docs/INTEGRATION-GUIDE.md)** — Detailed setup, prompt examples, .gitignore, customization, FAQ
 - **[Premium Request Comparison](docs/PREMIUM-REQUEST-COMPARISON.md)** — Cost analysis: ~30 requests standard vs 1-3 with Squad
-
----
 
 ## Architecture
 
