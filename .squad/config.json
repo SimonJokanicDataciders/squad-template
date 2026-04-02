@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "defaultModel": "claude-sonnet-4.6",
+  "agentModelOverrides": {
+    "lead": "claude-opus-4.6",
+    "ripley": "claude-opus-4.6",
+    "scribe": "claude-haiku-4.5",
+    "ralph": "claude-haiku-4.5"
+  },
+  "templateVersion": "1.0.0",
+  "templateDate": "2026-03-30"
+}

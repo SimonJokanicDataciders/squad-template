@@ -1,0 +1,8 @@
+{
+  "universe": "auto",
+  "created_at": "2026-04-02T13:04:41Z",
+  "policy": {
+    "max_agents": 8,
+    "overflow": "diegetic-expansion"
+  }
+}
