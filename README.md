@@ -9,7 +9,7 @@ Your AI development team, ready in 60 seconds.
 ## Prerequisites
 
 1. **GitHub Copilot** with agent mode enabled
-2. **CLI model: GPT-5.1 HIGH** — set this in your Copilot CLI settings. Other models work but all agents will use the same model instead of routing per agent.
+2. **CLI model: Any model, set to HIGH reasoning** — set this in your Copilot CLI settings. You don't need GPT-5.1 specifically — any model works, but it **must** be set to HIGH reasoning effort. Without HIGH, agents will use the same model instead of routing per agent.
 3. **Git repository** — your project must be a git repo (`git init`). Squad stores configuration in git-tracked files.
 
 ---
@@ -156,7 +156,7 @@ cd ~/squad-template && git pull
 → You're in the wrong directory. `cd` into your project where `.github/agents/squad.agent.md` exists.
 
 **All agents use the same model (e.g., gpt-4.1)**
-→ Switch CLI model to **GPT-5.1 HIGH**. Only this model routes models per agent.
+→ Switch your CLI model to **HIGH** reasoning effort. Any model works, but it must be set to HIGH for per-agent model routing.
 
 **"Read (Checking agent X) → Failed"**
 → Normal — agent sessions expire quickly. Squad checks files on disk automatically. No action needed.

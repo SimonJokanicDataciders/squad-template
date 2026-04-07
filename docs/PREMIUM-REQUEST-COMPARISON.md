@@ -243,5 +243,5 @@ The template routes automatically: opus (3x) for architecture decisions that aff
 
 ## Requirements
 
-- **CLI model: GPT-5.1 HIGH** — this is the only model that properly caches premium requests across agent spawns and supports per-agent model routing
+- **CLI model: Any model, set to HIGH reasoning** — the model must be set to HIGH reasoning effort to properly cache premium requests across agent spawns and support per-agent model routing. You don't need GPT-5.1 specifically — any model works at HIGH
 - **Optimized Squad template** — the default `squad init` does not include model routing, auto-proceed, or self-validation. Use [this template](https://github.com/SimonJokanicDataciders/squad-template) instead

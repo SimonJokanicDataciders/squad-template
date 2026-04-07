@@ -9,7 +9,7 @@
 ## Prerequisites
 
 1. **GitHub Copilot** with agent mode enabled
-2. **CLI model: GPT-5.1 HIGH** — set this in your Copilot CLI settings before starting. Other models will work but all agents will use the same model instead of routing per agent (opus/sonnet/haiku).
+2. **CLI model: Any model, set to HIGH reasoning** — set this in your Copilot CLI settings before starting. You don't need GPT-5.1 specifically — any model works, but it **must** be set to HIGH reasoning effort. Without HIGH, all agents will use the same model instead of routing per agent (opus/sonnet/haiku).
 3. **Git repository** — your project must already be a git repo (`git init`). Squad stores its configuration in files that are tracked by git.
 
 ---
@@ -251,7 +251,7 @@ When an agent makes a mistake:
 → You're in the wrong directory. `cd` into your project where `.github/agents/squad.agent.md` exists.
 
 **All agents use the same model (e.g., gpt-4.1)**
-→ Switch CLI model to **GPT-5.1 HIGH**. Only this model routes models per agent.
+→ Switch your CLI model to **HIGH** reasoning effort. Any model works, but it must be set to HIGH for per-agent model routing.
 
 **"Read (Checking agent X) → Failed"**
 → Normal — agent sessions expire quickly. Squad automatically checks files on disk. No action needed.
@@ -289,7 +289,7 @@ Currently: C#/.NET, TypeScript/JavaScript, Python. More languages can be added v
 ## Checklist
 
 - [ ] `~/squad-template` cloned
-- [ ] CLI model set to GPT-5.1 HIGH
+- [ ] CLI model set to HIGH reasoning effort
 - [ ] `init.sh --auto` run on the project
 - [ ] `copilot --agent squad` starts without "agent not found" error
 - [ ] First test prompt successful (e.g., "Analyze the project structure")
